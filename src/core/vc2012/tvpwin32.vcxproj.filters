@@ -58,6 +58,9 @@
     <Filter Include="extension">
       <UniqueIdentifier>{00466776-e92e-48d6-905d-db6c36ab46cc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{a0cedaa5-bf21-43c4-9db6-cdc746c180dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -995,5 +998,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="option_desc_ja.json" />
+    <None Include="..\..\..\test\startup.tjs">
+      <Filter>test</Filter>
+    </None>
   </ItemGroup>
 </Project>

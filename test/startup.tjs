@@ -1,0 +1,44 @@
+function assert(b, str="") {
+    if (b) return true;
+    throw new Exception(str);
+}
+
+var array0 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+var err = [];
+
+try {
+  array.each(function(item){});
+} catch (e) {
+  err.push(e.message);
+}
+
+try {
+  assert(array.map(function(item){return item * 2;}) == [0, 2, 4, 6, 8, 10, 12, 14, 16, 18], "map fail");
+  assert(array == array0, "map array broken");
+} catch (e) {
+  err.push(e.message);
+}
+
+try {
+  assert(array.filter(function(item){return item % 2 == 0;}) == [0, 2, 4, 6, 8], "filter fail");
+  assert(array == array0, "filter array broken");
+} catch (e) {
+  err.push(e.message);
+}
+
+try {
+  assert(array.reduce(function(acc, item){return acc + item;}, 10) == 55, "reduce fail");
+  assert(array == array0, "reduce array broken");
+} catch (e) {
+  err.push(e.message);
+}
+
+if (err.length == 0) {
+  System.inform("success!");
+} else {
+  err.insert(0, err.length + " errors:");
+  System.inform(err.join("\n  "));
+}
+
