@@ -491,6 +491,7 @@
     <ClInclude Include="..\visual\win32\VSyncTimingThread.h" />
     <ClInclude Include="..\visual\win32\WindowImpl.h" />
     <ClInclude Include="..\visual\WindowIntf.h" />
+    <ClInclude Include="platforms.h" />
     <ClInclude Include="Resource.h" />
   </ItemGroup>
   <ItemGroup>
