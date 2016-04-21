@@ -987,7 +987,8 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */clone)
     array->NativeInstanceSupport(TJS_NIS_GETINSTANCE, TJS_NATIVE_CLASSID_NAME, (iTJSNativeInstance**)&ni_clone);
     ni_clone->Assign(objthis);
     if (result) *result = tTJSVariant(array, array);
-
+    array->Release();
+    
     return TJS_S_OK;
 }
 TJS_END_NATIVE_METHOD_DECL(/* func.name */clone)
@@ -1060,6 +1061,7 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */map)
         array->Add(ni_map, fn_ret);
     }
     if (result) *result = tTJSVariant(array, array);
+    array->Release();
 
     delete[] paramList;
 
@@ -1095,6 +1097,7 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */filter)
         if (fn_ret.operator bool()) array->Add(ni_filter, *arg);
     }
     if (result) *result = tTJSVariant(array, array);
+    array->Release();
 
     delete[] paramList;
 

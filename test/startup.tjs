@@ -47,9 +47,12 @@ _try(function(){
   assert(n.n == 45, @'each failed ${n.n} ${n.b}');
   assert_raise(function(){array.each(null);}, 'an exception was not thrown');
   assert(simple_equals(array, array0), 'each breaks an array');
+  var a = array.each(function(item, idx, a){ n += item; b &= i == idx && a === "a"; i += 1; } incontextof n, "a");
 });
 
 _try(function(){
+  array.map(function(item){return item * 2;});
+  var a = array.map(function(item){return item * 2;});
   assert(simple_equals(
            array.map(function(item){return item * 2;}),
            [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]),
@@ -58,12 +61,16 @@ _try(function(){
 });
 
 _try(function(){
+  array.filter(function(item){return item % 2 == 0;});
+  var a = array.filter(function(item){return item % 2 == 0;});
   assert(simple_equals(array.filter(function(item){return item % 2 == 0;}), [0, 2, 4, 6, 8]), "filter fail");
   assert(simple_equals(array.filter(function(item){return [];}), array), "filter fail");
   assert(simple_equals(array, array0), "filter breaks an array");
 });
 
 _try(function(){
+  array.reduce(function(acc, item){return acc + item;});
+  var a = array.reduce(function(acc, item){return acc + item;});
   assert(array.reduce(function(acc, item){return acc + item;}) == 45, 'reduce fail 1');
   assert(array.reduce(function(acc, item){return acc + item;}, 10) == 55, @'reduce fail 2');
   assert([].reduce(function(acc, item){return acc + item;}) === void, 'reduce empty 1');
@@ -71,10 +78,12 @@ _try(function(){
   assert(simple_equals(array, array0), "reduce breaks an array");
 });
 
+Debug.message('========================================');
 if (err.count == 0) {
-  System.inform("success!");
+  Debug.message('success!');
 } else {
-  err.insert(0, err.count + " errors:");
-  System.inform(err.join("\n  "));
+  err.insert(0, @'${err.count}  errors:');
+  Debug.message(err.join("\n  "));
 }
+Debug.message('========================================');
 
