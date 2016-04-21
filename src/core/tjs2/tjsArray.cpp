@@ -974,6 +974,177 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */pack)
 }
 TJS_END_NATIVE_METHOD_DECL(/* func.name */pack)
 //----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */clone)
+{
+    // return shallow copy of this array
+    
+    if (numparams != 0) return TJS_E_BADPARAMCOUNT;
+    
+    TJS_GET_NATIVE_INSTANCE(/* var. name */ni_this, /* var. type */tTJSArrayNI);
+    
+    iTJSDispatch2 * array = TJSCreateArrayObject();
+    tTJSArrayNI * ni_clone;
+    array->NativeInstanceSupport(TJS_NIS_GETINSTANCE, TJS_NATIVE_CLASSID_NAME, (iTJSNativeInstance**)&ni_clone);
+    ni_clone->Assign(objthis);
+    if (result) *result = tTJSVariant(array, array);
+
+    return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/* func.name */clone)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */each)
+{
+    // plugins/scriptsEx
+    
+    if (numparams < 1) return TJS_E_BADPARAMCOUNT;
+
+    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
+    iTJSDispatch2 *fn = clo.Object;
+    iTJSDispatch2 *fn_this = clo.ObjThis;
+    if (!fn) return TJS_E_INVALIDPARAM;
+    if (!fn_this) {
+        fn_this = objthis;
+    }
+
+    tTJSVariant **paramList = new tTJSVariant*[numparams + 1];
+    /* paramList[0]  := item
+     * paramList[1]  := index
+     * paramList[..] := *args
+     */
+    tTJSVariant index;
+    paramList[0] = &index;
+    for (tjs_int i = 1; i < numparams; ++i)
+        paramList[i + 1] = param[i];
+    
+    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
+    tTJSArrayNI::tArrayItemIterator i;
+    tTJSVariant fn_ret;
+    tjs_int idx = 0;
+    for (i = ni->Items.begin(); i != ni->Items.end(); ++i) {
+        index = idx;
+        paramList[1] = &(*i);
+        (void)fn->FuncCall(0, NULL, NULL, &fn_ret, numparams + 1, paramList, fn_this);
+        idx += 1;
+    }
+
+    delete[] paramList;
+
+    return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/* func.name */each)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */map)
+{
+    if (numparams != 1) return TJS_E_BADPARAMCOUNT;
+
+    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
+    iTJSDispatch2 *fn = clo.Object;
+    iTJSDispatch2 *fn_this = clo.ObjThis;
+    if (!fn) return TJS_E_INVALIDPARAM;
+    if (!fn_this) {
+        fn_this = objthis;
+    }
+
+    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
+    
+    tTJSArrayObject * array = (tTJSArrayObject*)TJSCreateArrayObject();
+    tTJSArrayNI * ni_map;
+    array->NativeInstanceSupport(TJS_NIS_GETINSTANCE, TJS_NATIVE_CLASSID_NAME, (iTJSNativeInstance**)&ni_map);
+
+    tTJSVariant **paramList = new tTJSVariant*[1];
+    tTJSVariant fn_ret;
+    for (tTJSArrayNI::tArrayItemIterator i = ni->Items.begin(); i != ni->Items.end(); ++i) {
+        fn_ret.Clear();
+        paramList[0] = &(*i);
+        (void)fn->FuncCall(0, NULL, NULL, &fn_ret, 1, paramList, fn_this);
+        array->Add(ni_map, fn_ret);
+    }
+    if (result) *result = tTJSVariant(array, array);
+
+    delete[] paramList;
+
+    return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/* func.name */map)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */filter)
+{
+    if (numparams != 1) return TJS_E_BADPARAMCOUNT;
+
+    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
+    iTJSDispatch2 *fn = clo.Object;
+    iTJSDispatch2 *fn_this = clo.ObjThis;
+    if (!fn) return TJS_E_INVALIDPARAM;
+    if (!fn_this) {
+        fn_this = objthis;
+    }
+
+    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
+
+    tTJSArrayObject * array = (tTJSArrayObject*)TJSCreateArrayObject();
+    tTJSArrayNI * ni_filter;
+    array->NativeInstanceSupport(TJS_NIS_GETINSTANCE, TJS_NATIVE_CLASSID_NAME, (iTJSNativeInstance**)&ni_filter);
+
+    tTJSVariant **paramList = new tTJSVariant*[1];
+    tTJSVariant fn_ret;
+    for (tTJSArrayNI::tArrayItemIterator i = ni->Items.begin(); i != ni->Items.end(); ++i) {
+        fn_ret.Clear();
+        tTJSVariant *arg = &(*i);
+        paramList[0] = arg;
+        (void)fn->FuncCall(0, NULL, NULL, &fn_ret, 1, paramList, fn_this);
+        if (fn_ret.operator bool()) array->Add(ni_filter, *arg);
+    }
+    if (result) *result = tTJSVariant(array, array);
+
+    delete[] paramList;
+
+    return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/* func.name */filter)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */reduce)
+{
+    if (numparams != 1 && numparams != 2) return TJS_E_BADPARAMCOUNT;
+
+    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
+    iTJSDispatch2 *fn = clo.Object;
+    iTJSDispatch2 *fn_this = clo.ObjThis;
+    if (!fn) return TJS_E_INVALIDPARAM;
+    if (!fn_this) {
+        fn_this = objthis;
+    }
+
+    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
+    
+    if (ni->Items.empty() && numparams == 1) {
+        if (result) result->Clear();
+        return TJS_S_OK;
+    }
+
+    tTJSArrayNI::tArrayItemIterator i = ni->Items.begin();
+    tTJSVariant acc;
+    if (numparams == 1) {
+        // ni->Items is NOT empty!
+        acc = *i++;
+    } else {
+        acc = *param[1];
+    }
+
+    tTJSVariant **paramList = new tTJSVariant*[2];
+    paramList[0] = &acc;
+    
+    for (; i != ni->Items.end(); ++i) {
+        tTJSVariant *arg = &(*i);
+        paramList[1] = arg;
+        (void)fn->FuncCall(0, NULL, NULL, &acc, 2, paramList, fn_this);
+    }
+    if (result) *result = acc;
+
+    delete[] paramList;
+
+    return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/* func.name */reduce)
 
 
 //----------------------------------------------------------------------
@@ -1751,7 +1922,7 @@ tjs_error TJS_INTF_METHOD
 		iTJSDispatch2 *objthis)
 {
 	tjs_int idx;
-	if(membername && IsNumber(membername, idx))
+    if(membername && IsNumber(membername, idx))
 		return CreateNewByNum(flag, idx, result, numparams, param, objthis);
 	return inherited::CreateNew(flag, membername, hint, result, numparams, param, objthis);
 }

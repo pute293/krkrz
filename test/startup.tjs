@@ -3,42 +3,78 @@ function assert(b, str="") {
     throw new Exception(str);
 }
 
-var array0 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+function assert_raise(fn, str="") {
+  try { fn(); } catch (e) { return true; }
+  throw new Exception(str);
+}
+
+function simple_equals(ary1, ary2) {
+  if (ary1.count != ary2.count) return false;
+  for (var i = 0, e = ary1.count; i < e; ++i)
+    if (ary1[i] !== ary2[i]) return false;
+  return true;
+}
 
 var err = [];
 
-try {
-  array.each(function(item){});
-} catch (e) {
-  err.push(e.message);
+function _try(fn) {
+  try {
+    fn();
+  } catch (e) {
+    err.push(e.message);
+  }
 }
 
-try {
-  assert(array.map(function(item){return item * 2;}) == [0, 2, 4, 6, 8, 10, 12, 14, 16, 18], "map fail");
-  assert(array == array0, "map array broken");
-} catch (e) {
-  err.push(e.message);
-}
+var array0 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-try {
-  assert(array.filter(function(item){return item % 2 == 0;}) == [0, 2, 4, 6, 8], "filter fail");
-  assert(array == array0, "filter array broken");
-} catch (e) {
-  err.push(e.message);
-}
+assert(simple_equals(array0, array), 'simple_equals 1');
+assert(!simple_equals(array0, [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]), 'simple_equals 2');
 
-try {
-  assert(array.reduce(function(acc, item){return acc + item;}, 10) == 55, "reduce fail");
-  assert(array == array0, "reduce array broken");
-} catch (e) {
-  err.push(e.message);
-}
+_try(function(){
+  array.clone();
+  var a = array.clone();
+  assert(a !== array, 'clone returns same object');
+  assert(simple_equals(a, array), 'clone failed');
+  a[0] = 100;
+  assert(array[0] === 0, 'clone deeply???');
+  assert(simple_equals(array, array0), 'clone breaks an array');
+});
 
-if (err.length == 0) {
+_try(function(){
+  var n = %[n:0,i:0,b:true];
+  array.each(function(item, idx, a){ n += item; b &= i == idx && a === "a"; i += 1; } incontextof n, "a");
+  assert(n.n == 45, @'each failed ${n.n} ${n.b}');
+  assert_raise(function(){array.each(null);}, 'an exception was not thrown');
+  assert(simple_equals(array, array0), 'each breaks an array');
+});
+
+_try(function(){
+  assert(simple_equals(
+           array.map(function(item){return item * 2;}),
+           [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]),
+         "map fail");
+  assert(simple_equals(array, array0), "map breaks an array");
+});
+
+_try(function(){
+  assert(simple_equals(array.filter(function(item){return item % 2 == 0;}), [0, 2, 4, 6, 8]), "filter fail");
+  assert(simple_equals(array.filter(function(item){return [];}), array), "filter fail");
+  assert(simple_equals(array, array0), "filter breaks an array");
+});
+
+_try(function(){
+  assert(array.reduce(function(acc, item){return acc + item;}) == 45, 'reduce fail 1');
+  assert(array.reduce(function(acc, item){return acc + item;}, 10) == 55, @'reduce fail 2');
+  assert([].reduce(function(acc, item){return acc + item;}) === void, 'reduce empty 1');
+  assert([].reduce(function(acc, item){return acc + item;}, 1) == 1, 'reduce empty 2');
+  assert(simple_equals(array, array0), "reduce breaks an array");
+});
+
+if (err.count == 0) {
   System.inform("success!");
 } else {
-  err.insert(0, err.length + " errors:");
+  err.insert(0, err.count + " errors:");
   System.inform(err.join("\n  "));
 }
 
