@@ -70,5 +70,8 @@
     <CustomBuild Include="tvpps_asm.nas">
       <Filter>ASM Source</Filter>
     </CustomBuild>
+    <CustomBuild Include="detect_cpu.nas">
+      <Filter>ASM Source</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
