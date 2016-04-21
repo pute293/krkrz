@@ -1,0 +1,78 @@
+var err = [];
+var array0 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  
+testArrayFunctions();
+
+function testArrayFunctions() {
+  function _try(fn) {
+    try {
+      fn();
+    } catch (e) {
+      err.push(e.message);
+    }
+  }
+  
+  assert(simple_equals(array0, array), 'simple_equals 1');
+  assert(!simple_equals(array0, [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]), 'simple_equals 2');
+  
+  _try(function(){
+    array.clone();
+    var a = array.clone();
+    assert(a !== array, 'clone returns same object');
+    assert(simple_equals(a, array), 'clone failed');
+    a[0] = 100;
+    assert(array[0] === 0, 'clone deeply???');
+    assert(simple_equals(array, array0), 'clone breaks an array');
+  });
+  
+  _try(function(){
+    var n = %[n:0,i:0,b:true];
+    array.each(function(item, idx, a){ n += item; b &= i == idx && a === "a"; i += 1; } incontextof n, "a");
+    assert(n.n == 45, @'each failed ${n.n} ${n.b}');
+    assert_raise(function(){array.each(null);}, 'an exception was not thrown');
+    assert(simple_equals(array, array0), 'each breaks an array');
+    var a = array.each(function(item, idx, a){ n += item; b &= i == idx && a === "a"; i += 1; } incontextof n, "a");
+  });
+  
+  _try(function(){
+    array.map(function(item){return item * 2;});
+    var a = array.map(function(item){return item * 2;});
+    assert(simple_equals(
+             array.map(function(item){return item * 2;}),
+             [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]),
+           "map fail");
+    assert(simple_equals(array, array0), "map breaks an array");
+  });
+  
+  _try(function(){
+    array.filter(function(item){return item % 2 == 0;});
+    var a = array.filter(function(item){return item % 2 == 0;});
+    assert(simple_equals(array.filter(function(item){return item % 2 == 0;}), [0, 2, 4, 6, 8]), "filter fail");
+    assert(simple_equals(array.filter(function(item){return [];}), array), "filter fail");
+    assert(simple_equals(array, array0), "filter breaks an array");
+  });
+  
+  _try(function(){
+    array.reduce(function(acc, item){return acc + item;});
+    var a = array.reduce(function(acc, item){return acc + item;});
+    assert(array.reduce(function(acc, item){return acc + item;}) == 45, 'reduce fail 1');
+    assert(array.reduce(function(acc, item){return acc + item;}, 10) == 55, @'reduce fail 2');
+    assert([].reduce(function(acc, item){return acc + item;}) === void, 'reduce empty 1');
+    assert([].reduce(function(acc, item){return acc + item;}, 1) == 1, 'reduce empty 2');
+    assert(simple_equals(array, array0), "reduce breaks an array");
+  });
+  
+  Debug.message('========================================');
+  if (err.count == 0) {
+    Debug.message('success!');
+  } else {
+    err.insert(0, @'${err.count}  errors:');
+    Debug.message(err.join("\n  "));
+  }
+  Debug.message('========================================');
+}
+
+invalidate err;
+invalidate array;
+invalidate array0;
