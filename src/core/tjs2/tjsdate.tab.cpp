@@ -1,11 +1,10 @@
 #include "tjsCommHead.h"
-
-/* A Bison parser, made by GNU Bison 2.4.1.  */
+/* A Bison parser, made by GNU Bison 2.4.2.  */
 
 /* Skeleton implementation for Bison's Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2006, 2009-2010 Free Software
+   Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,7 +46,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.4.1"
+#define YYBISON_VERSION "2.4.2"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -120,7 +119,7 @@ int dperror(char * msg)
 
 
 /* Line 189 of yacc.c  */
-#line 123 "tjsdate.tab.cpp"
+#line 122 "tjsdate.tab.cpp"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -170,7 +169,7 @@ typedef union YYSTYPE
 
 
 /* Line 214 of yacc.c  */
-#line 173 "tjsdate.tab.cpp"
+#line 172 "tjsdate.tab.cpp"
 } YYSTYPE;
 YYLEX_PROTO_DECL
 
@@ -184,7 +183,7 @@ YYLEX_PROTO_DECL
 
 
 /* Line 264 of yacc.c  */
-#line 185 "tjsdate.tab.cpp"
+#line 184 "tjsdate.tab.cpp"
 
 #ifdef short
 # undef short
@@ -234,7 +233,7 @@ typedef short int yytype_int16;
 #define YYSIZE_MAXIMUM ((YYSIZE_T) -1)
 
 #ifndef YY_
-# if YYENABLE_NLS
+# if defined YYENABLE_NLS && YYENABLE_NLS
 #  if ENABLE_NLS
 #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
 #   define YY_(msgid) dgettext ("bison-runtime", msgid)
@@ -641,9 +640,18 @@ static const yytype_uint8 yystos[] =
 
 /* Like YYERROR except do call yyerror.  This remains here temporarily
    to ease the transition to the new meaning of YYERROR, for GCC.
-   Once GCC version 2 has supplanted version 1, this can go.  */
+   Once GCC version 2 has supplanted version 1, this can go.  However,
+   YYFAIL appears to be in use.  Nevertheless, it is formally deprecated
+   in Bison 2.4.2's NEWS entry, where a plan to phase it out is
+   discussed.  */
 
 #define YYFAIL		goto yyerrlab
+#if defined YYFAIL
+  /* This is here to suppress warnings from the GCC cpp's
+     -Wunused-macros.  Normally we don't worry about that warning, but
+     some users do, and we want to make it easy for users to remove
+     YYFAIL uses, which will produce warnings from Bison 2.5.  */
+#endif
 
 #define YYRECOVERING()  (!!yyerrstatus)
 
@@ -700,7 +708,7 @@ while (YYID (0))
    we won't break user code: when these are the locations we know.  */
 
 #ifndef YY_LOCATION_PRINT
-# if YYLTYPE_IS_TRIVIAL
+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
 #  define YY_LOCATION_PRINT(File, Loc)			\
      fprintf (File, "%d.%d-%d.%d",			\
 	      (Loc).first_line, (Loc).first_column,	\
@@ -1438,7 +1446,7 @@ yyreduce:
     {
         case 3:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 80 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(2) - (6)].val));
 															dp->SetYear((yyvsp[(4) - (6)].val)); ;}
@@ -1446,7 +1454,7 @@ yyreduce:
 
   case 4:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 87 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(2) - (7)].val));
 															dp->SetYear((yyvsp[(5) - (7)].val)); ;}
@@ -1454,7 +1462,7 @@ yyreduce:
 
   case 5:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 94 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(2) - (8)].val));
 															dp->SetYear((yyvsp[(6) - (8)].val)); ;}
@@ -1462,7 +1470,7 @@ yyreduce:
 
   case 6:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 101 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(3) - (6)].val));
 															dp->SetYear((yyvsp[(4) - (6)].val)); ;}
@@ -1470,7 +1478,7 @@ yyreduce:
 
   case 7:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 108 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(4) - (7)].val));
 															dp->SetYear((yyvsp[(5) - (7)].val)); ;}
@@ -1478,7 +1486,7 @@ yyreduce:
 
   case 8:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 115 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(4) - (8)].val));
 															dp->SetYear((yyvsp[(6) - (8)].val)); ;}
@@ -1486,7 +1494,7 @@ yyreduce:
 
   case 9:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 123 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(2) - (6)].val));
 															dp->SetYear((yyvsp[(5) - (6)].val)); ;}
@@ -1494,7 +1502,7 @@ yyreduce:
 
   case 10:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 131 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(2) - (7)].val));
 															dp->SetYear((yyvsp[(6) - (7)].val)); ;}
@@ -1502,7 +1510,7 @@ yyreduce:
 
   case 11:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 138 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(3) - (6)].val));
 															dp->SetYear((yyvsp[(5) - (6)].val)); ;}
@@ -1510,7 +1518,7 @@ yyreduce:
 
   case 12:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 145 "tjsdate.y"
     {	dp->SetMDay((yyvsp[(4) - (7)].val));
 															dp->SetYear((yyvsp[(6) - (7)].val)); ;}
@@ -1518,7 +1526,7 @@ yyreduce:
 
   case 13:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 153 "tjsdate.y"
     {	dp->SetMonth((yyvsp[(4) - (8)].val)-1);
 															dp->SetYear((yyvsp[(2) - (8)].val));
@@ -1527,21 +1535,21 @@ yyreduce:
 
   case 18:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 170 "tjsdate.y"
     { dp->SetMonth((yyvsp[(1) - (1)].val)); ;}
     break;
 
   case 21:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 180 "tjsdate.y"
     { /* TODO: sub-seconds support */ ;}
     break;
 
   case 23:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 188 "tjsdate.y"
     {
 			dp->SetHours((yyvsp[(1) - (6)].val));
@@ -1552,7 +1560,7 @@ yyreduce:
 
   case 24:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 195 "tjsdate.y"
     {
 			dp->SetHours((yyvsp[(1) - (3)].val));
@@ -1563,50 +1571,50 @@ yyreduce:
 
   case 25:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 203 "tjsdate.y"
     { dp->SetAMPM(false); ;}
     break;
 
   case 26:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 204 "tjsdate.y"
     { dp->SetAMPM(true); ;}
     break;
 
   case 30:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 214 "tjsdate.y"
     { dp->SetTimeZone((yyvsp[(1) - (1)].val)); ;}
     break;
 
   case 32:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 219 "tjsdate.y"
     { dp->SetTimeZoneOffset((yyvsp[(2) - (2)].val)); ;}
     break;
 
   case 33:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 220 "tjsdate.y"
     { dp->SetTimeZoneOffset(-(yyvsp[(2) - (2)].val)); ;}
     break;
 
   case 35:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 227 "tjsdate.y"
     { dp->SkipToRightParenthesis(); ;}
     break;
 
 
 
-/* Line 1455 of yacc.c  */
-#line 1607 "tjsdate.tab.cpp"
+/* Line 1464 of yacc.c  */
+#line 1615 "tjsdate.tab.cpp"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1817,7 +1825,7 @@ yyreturn:
 
 
 
-/* Line 1675 of yacc.c  */
+/* Line 1684 of yacc.c  */
 #line 239 "tjsdate.y"
 
 

@@ -32,4 +32,3 @@ function simple_equals(ary1, ary2) {
 
 Scripts.execStorage("array_functions.tjs");
 Scripts.execStorage("arrow.tjs");
-//*/

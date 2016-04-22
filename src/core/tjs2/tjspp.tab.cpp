@@ -1,11 +1,10 @@
 #include "tjsCommHead.h"
-
-/* A Bison parser, made by GNU Bison 2.4.1.  */
+/* A Bison parser, made by GNU Bison 2.4.2.  */
 
 /* Skeleton implementation for Bison's Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2006, 2009-2010 Free Software
+   Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,7 +46,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.4.1"
+#define YYBISON_VERSION "2.4.2"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -124,7 +123,7 @@ int _pperror(char * msg, void *pm)
 
 
 /* Line 189 of yacc.c  */
-#line 127 "tjspp.tab.cpp"
+#line 126 "tjspp.tab.cpp"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -194,7 +193,7 @@ typedef union YYSTYPE
 
 
 /* Line 214 of yacc.c  */
-#line 197 "tjspp.tab.cpp"
+#line 196 "tjspp.tab.cpp"
 } YYSTYPE;
 YYLEX_PROTO_DECL
 
@@ -208,7 +207,7 @@ YYLEX_PROTO_DECL
 
 
 /* Line 264 of yacc.c  */
-#line 209 "tjspp.tab.cpp"
+#line 208 "tjspp.tab.cpp"
 
 #ifdef short
 # undef short
@@ -258,7 +257,7 @@ typedef short int yytype_int16;
 #define YYSIZE_MAXIMUM ((YYSIZE_T) -1)
 
 #ifndef YY_
-# if YYENABLE_NLS
+# if defined YYENABLE_NLS && YYENABLE_NLS
 #  if ENABLE_NLS
 #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
 #   define YY_(msgid) dgettext ("bison-runtime", msgid)
@@ -662,9 +661,18 @@ static const yytype_uint8 yystos[] =
 
 /* Like YYERROR except do call yyerror.  This remains here temporarily
    to ease the transition to the new meaning of YYERROR, for GCC.
-   Once GCC version 2 has supplanted version 1, this can go.  */
+   Once GCC version 2 has supplanted version 1, this can go.  However,
+   YYFAIL appears to be in use.  Nevertheless, it is formally deprecated
+   in Bison 2.4.2's NEWS entry, where a plan to phase it out is
+   discussed.  */
 
 #define YYFAIL		goto yyerrlab
+#if defined YYFAIL
+  /* This is here to suppress warnings from the GCC cpp's
+     -Wunused-macros.  Normally we don't worry about that warning, but
+     some users do, and we want to make it easy for users to remove
+     YYFAIL uses, which will produce warnings from Bison 2.5.  */
+#endif
 
 #define YYRECOVERING()  (!!yyerrstatus)
 
@@ -721,7 +729,7 @@ while (YYID (0))
    we won't break user code: when these are the locations we know.  */
 
 #ifndef YY_LOCATION_PRINT
-# if YYLTYPE_IS_TRIVIAL
+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
 #  define YY_LOCATION_PRINT(File, Loc)			\
      fprintf (File, "%d.%d-%d.%d",			\
 	      (Loc).first_line, (Loc).first_column,	\
@@ -791,11 +799,11 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
 # else
   YYUSE (yyoutput);
 # endif
-  switch (yytype)
+  /*switch (yytype)
     {
       default:
 	break;
-    }
+    }*/
 }
 
 
@@ -1459,183 +1467,183 @@ yyreduce:
     {
         case 2:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 104 "syntax/tjspp.y"
     { ep->Result = (yyvsp[(1) - (1)].val); ;}
     break;
 
   case 3:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 108 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 4:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 109 "syntax/tjspp.y"
     { tjs->SetPPValue(ep->GetString((yyvsp[(1) - (3)].nv)), (yyvsp[(3) - (3)].val)); (yyval.val) = (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 5:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 110 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) != (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 6:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 111 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) == (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 7:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 112 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) || (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 8:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 113 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) && (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 9:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 114 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) | (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 10:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 115 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) ^ (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 11:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 116 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) & (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 12:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 117 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) < (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 13:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 118 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) > (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 14:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 119 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) >= (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 15:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 120 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) <= (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 16:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 121 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) + (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 17:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 122 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) - (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 18:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 123 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) % (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 19:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 124 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (3)].val) * (yyvsp[(3) - (3)].val); ;}
     break;
 
   case 20:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 125 "syntax/tjspp.y"
     { if((yyvsp[(3) - (3)].val)==0) { YYABORT; } else { (yyval.val) = (yyvsp[(1) - (3)].val) / (yyvsp[(3) - (3)].val); } ;}
     break;
 
   case 21:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 126 "syntax/tjspp.y"
     { (yyval.val) = ! (yyvsp[(2) - (2)].val); ;}
     break;
 
   case 22:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 127 "syntax/tjspp.y"
     { (yyval.val) = + (yyvsp[(2) - (2)].val); ;}
     break;
 
   case 23:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 128 "syntax/tjspp.y"
     { (yyval.val) = - (yyvsp[(2) - (2)].val); ;}
     break;
 
   case 24:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 129 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(2) - (3)].val); ;}
     break;
 
   case 25:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 130 "syntax/tjspp.y"
     { (yyval.val) = (yyvsp[(1) - (1)].val); ;}
     break;
 
   case 26:
 
-/* Line 1455 of yacc.c  */
+/* Line 1464 of yacc.c  */
 #line 131 "syntax/tjspp.y"
     { (yyval.val) = tjs->GetPPValue(ep->GetString((yyvsp[(1) - (1)].nv))); ;}
     break;
 
 
 
-/* Line 1455 of yacc.c  */
-#line 1636 "tjspp.tab.cpp"
+/* Line 1464 of yacc.c  */
+#line 1644 "tjspp.tab.cpp"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1846,7 +1854,7 @@ yyreturn:
 
 
 
-/* Line 1675 of yacc.c  */
+/* Line 1684 of yacc.c  */
 #line 134 "syntax/tjspp.y"
 
 
