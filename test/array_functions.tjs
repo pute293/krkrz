@@ -64,6 +64,7 @@ function testArrayFunctions() {
   });
   
   Debug.message('========================================');
+  Debug.message('TEST ARRAY FUNCTION');
   if (err.count == 0) {
     Debug.message('success!');
   } else {

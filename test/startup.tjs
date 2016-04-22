@@ -1,3 +1,18 @@
+//var a = |x| -> { x; };
+//var b = x -> { return x; };
+//System.inform(b(1));
+//var a = function(i) { return i*5; };
+//System.inform(a(1));
+//System.inform(Scripts.exec("var b = x -> { x; };"));
+// -> null;System.exit();/*
+//class A{}
+//var a = A();
+//var b = new A();
+//System.inform(a);
+//System.inform(b);
+//var c = new A()();
+//System.inform(c);
+
 function assert(b, str="") {
     if (b) return true;
     throw new Exception(str);
@@ -16,3 +31,5 @@ function simple_equals(ary1, ary2) {
 }
 
 Scripts.execStorage("array_functions.tjs");
+Scripts.execStorage("arrow.tjs");
+//*/

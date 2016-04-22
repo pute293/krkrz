@@ -1,0 +1,103 @@
+var err = [];
+var fn = function(){ };
+var gn = function(){ };
+var d = %[];
+class A { }
+
+testArrow();
+
+function testArrow() {
+  function _try(fn) {
+    try {
+      fn();
+    } catch (e) {
+      err.push(e.message);
+    }
+  }
+  
+  fn = -> x { };
+  _try(->{assert(fn() === void, 'void 1');});
+  
+  fn = -> { };
+  _try(->{assert(fn() === void, 'void 2');});
+  
+  fn = -> [];
+  _try(->{assert(fn() === void, 'void 3');});
+  
+  fn = -> [ null ];
+  _try(->{assert(fn() === null, 'null');});
+  
+  fn = -> x [ x ];
+  _try(->[assert(fn(10) === 10, 'expr identity')]);
+  
+  fn = -> x [ x * 2 ];
+  _try(->[assert(fn(10) === 20, 'expr twice')]);
+  
+  fn = -> x [ x * 2 + 3 * (5 - x) ];
+  _try(->[assert(fn(10) === 5, 'long expression')]);
+  
+  fn = -> x { return x; };
+  _try(->{assert(fn(10) === 10, 'identity statement');});
+  
+  fn = -> x { x * 2; };
+  _try(->{assert(fn(10) === void, 'void statement');});
+  
+  fn = -> x { return x * 2; };
+  _try(->{assert(fn(10) === 20, 'twice statement');});
+  
+  fn = -> x { return x * 2 + 3 * (5 - x); };
+  _try(->{assert(fn(10) === 5, 'long statement');});
+  
+  fn = -> x { return gn(x); };
+  gn = -> x { return x + 1; };
+  _try(->{assert(fn(10) === 11, 'deep call');});
+  
+  fn = -> x [ gn(x) ];
+  gn = -> x [ x + 1 ];
+  _try(->{assert(fn(10) === 11, 'expr deep call');});
+  
+  fn = -> { return new A(); };
+  gn = -> { return A(); };
+  _try(->{assert(typeof fn() === 'Object', 'new call 1');});
+  _try(->{assert(typeof gn() === 'void', 'new call 2');});
+  
+  fn = -> [ new A() ];
+  gn = -> [ A() ];
+  _try(->{assert(typeof fn() === 'Object', 'expr new call 1');});
+  _try(->{assert(typeof gn() === 'void', 'expr new call 2');});
+  
+  fn = -> (x, y) [ x * y ];
+  _try(->{assert(fn(10, 20) === 200, 'multiple argument');});
+  
+  fn = -> (x, args*) [ x * args.reduce(-> (acc, cur) [ acc + cur ]) ];
+  _try(->{assert(fn(10, 1, 2, 3, 4, 5, 6, 7, 8, 9) === 450, 'array argument 1');});
+  _try(->{assert(fn(10, [1, 2, 3, 4, 5, 6, 7, 8, 9]*) === 450, 'array argument 2');});
+  
+  gn = -> (ary*) [ ary.reduce(-> (acc, cur) [acc + cur]) ];
+  fn = -> (x, *) [ x * gn(*) ];
+  _try(->[assert(fn(10, 1, 2, 3, 4, 5, 6, 7, 8, 9) == 450, 'array argument 3')]);
+  
+  fn = -> (x, y = 10) [ x * y ];
+  _try(->[assert(fn(5) === 50, 'default argument')]);
+  
+  fn = -> (a : int, b : int = 10) : int [ a * b ];
+  _try(->[assert(fn(5) === 50, 'type annotation')]);
+  
+  d = %[a:37];
+  fn = -> [ a = 10 ] incontextof d;
+  _try(->[assert(fn() === 10 && d.a === 10, 'context change')]);
+  
+  Debug.message('========================================');
+  Debug.message('TEST ARROW NOTATION');
+  if (err.count == 0) {
+    Debug.message('success!');
+  } else {
+    err.insert(0, @'${err.count}  errors:');
+    Debug.message(err.join("\n  "));
+  }
+  Debug.message('========================================');
+}
+
+invalidate err;
+invalidate fn;
+invalidate gn;

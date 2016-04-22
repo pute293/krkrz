@@ -1001,5 +1001,11 @@
     <None Include="..\..\..\test\startup.tjs">
       <Filter>test</Filter>
     </None>
+    <None Include="..\..\..\test\array_functions.tjs">
+      <Filter>test</Filter>
+    </None>
+    <None Include="..\..\..\test\arrow.tjs">
+      <Filter>test</Filter>
+    </None>
   </ItemGroup>
 </Project>

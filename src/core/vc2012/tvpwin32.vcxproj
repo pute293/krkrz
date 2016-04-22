@@ -656,6 +656,8 @@
     <Image Include="tvpwin32.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\test\array_functions.tjs" />
+    <None Include="..\..\..\test\arrow.tjs" />
     <None Include="..\..\..\test\startup.tjs" />
     <None Include="option_desc_ja.json" />
   </ItemGroup>

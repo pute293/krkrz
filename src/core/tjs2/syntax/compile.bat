@@ -1,3 +1,4 @@
+@echo off
 echo tjs.y :
 perl CR.pl tjs.y
 bison -dv -o tjs.tab.cpp tjs.y
@@ -25,4 +26,4 @@ copy tjsdate.tab.hpp ..\tjsdate.tab.hpp
 call gen_wordtable.bat
 del *.cpp
 del *.hpp
-del *.output
+rem del *.output
