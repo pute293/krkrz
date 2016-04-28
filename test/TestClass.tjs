@@ -66,9 +66,9 @@ class Test {
   
   function run() {
     puts(@'@@@ TEST ${name} ==============================');
-    setup();
     var result = [];
     for (var i = 0; i < tests.count; ++i) {
+      setup();
       var test = tests[i];
       try {
         this[test]();

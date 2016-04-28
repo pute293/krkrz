@@ -760,6 +760,14 @@ priority_expr
 	  T_SYMBOL									{ tTJSExprNode * node = cc->MakeNP0(T_CONSTVAL);
 												  node->SetValue(lx->GetValue($4));
 												  $$ = cc->MakeNP2(T_DOT, $1, node); }
+	| priority_expr "->"						{ lx->SetNextIsBareWord(); }
+	  T_SYMBOL									{ /* syntactic sugar of '(Dictionary.*T_SYMBOL* incontexof *priority_expr*)' */
+												  auto dict = cc->MakeNP0(T_SYMBOL);
+												  auto method = cc->MakeNP0(T_CONSTVAL);
+												  dict->SetValue(tTJSVariant("Dictionary"));
+												  method->SetValue(lx->GetValue($4));
+												  auto func = cc->MakeNP2(T_DOT, dict, method);
+												  $$ = cc->MakeNP2(T_INCONTEXTOF, func, $1); }
 	| priority_expr "++"						{ $$ = cc->MakeNP1(T_POSTINCREMENT, $1); }
 	| priority_expr "--"						{ $$ = cc->MakeNP1(T_POSTDECREMENT, $1); }
 	| priority_expr	"!"							{ $$ = cc->MakeNP1(T_EVAL, $1); }
