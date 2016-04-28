@@ -1,0 +1,208 @@
+(new TestSyntax()).run();
+
+class TestSyntax extends Test {
+  
+  var name = 'SYNTAX';
+  var tests = [
+    'test_while_1',
+    'test_while_2',
+    'test_while_statement',
+    'test_while_continue',
+    'test_while_break',
+    'test_do_while_1',
+    'test_do_while_2',
+    'test_do_while_statement_1',
+    'test_do_while_statement_2',
+    'test_do_while_continue',
+    'test_do_while_break',
+    'test_for_1',
+    'test_for_2',
+    'test_for_statement',
+    'test_for_continue',
+    'test_for_break'
+  ];
+  
+  function test_while_1() {
+    var a = 0;
+    while (a < 10) {
+      a += 1;
+    }
+    assert_equal(a, 10, 'while 1');
+  }
+  
+  function test_while_2() {
+    var a = 0;
+    var d = %[ a : 0 ];
+    var f = function { return a++; } incontextof d;
+    while (f() < 10) {
+      a += 1;
+    }
+    assert_equal(a, 10, 'while 2');
+  }
+  
+  function test_while_statement() {
+    var a = 0;
+    var b = void;
+    while (a++ < 10) var b = a;
+    assert_equal(a, 11, 'while statement 1');
+    assert_equal(b, void, 'while statement 2');
+    // 公式の仕様では while (expr) statement は
+    // while (expr) { statement } と異なる動作をする
+    // したがって以下が正しい
+    //assert_equal(b, 10, 'while statement 2');
+    var c = 0;
+    var d = void;
+    while (c++ < 10) d = c;
+    assert_equal(c, 11, 'while statement 3');
+    assert_equal(d, 10, 'while statement 4');
+  }
+  
+  function test_while_continue() {
+    var a = 0;
+    var b = 0;
+    while (a++ < 10) {
+      if (a % 2 === 0) continue;
+      b += 1;
+    }
+    assert_equal(b, 5, 'while continue');
+  }
+  
+  function test_while_break() {
+    var a = 0;
+    var b = 0;
+    while (a++ < 10) {
+      b += 1;
+      if (a % 5 === 0) break;
+    }
+    assert_equal(b, 5, 'while break');
+  }
+  
+  function test_do_while_1() {
+    var a = 0;
+    do { a += 1; } while (a < 0);
+    assert_equal(a, 1, 'do-while 1');
+  }
+  
+  function test_do_while_2() {
+    var a = 0;
+    var d = %[ a : 0 ];
+    var f = function { return a++; } incontextof d;
+    do { a += 1; } while (f() < 0);
+    assert_equal(a, 1, 'do-while 2');
+  }
+  
+  function test_do_while_statement_1 {
+    var a = 0;
+    var b = 0;
+    do if (a % 2 == 0) {
+      b += a;
+    } while (a++ < 10);
+    assert_equal(a, 11, 'do-while statement 1.1');
+    assert_equal(b, 0 + 2 + 4 + 6 + 8 + 10, 'do-while statement 1.2');
+  }
+  
+  function test_do_while_statement_2 {
+    var a = 0;
+    var b = void;
+    do var b = a; while (a++ < 10);
+    assert_equal(a, 11, 'do-while statement 2.1');
+    assert_equal(b, void, 'do-while statement 2.2');
+    // 公式の仕様では do statement while (expr); は
+    // do { statement } while (expr); と異なる動作をする
+    // したがって以下が正しい
+    //assert_equal(b, 10, 'do-while statement 2.2');
+    var c = 0;
+    var d = void;
+    do d = c; while (c++ < 10);
+    assert_equal(c, 11, 'do-while statement 2.3');
+    assert_equal(d, 10, 'do-while statement 2.4');
+  }
+  
+  function test_do_while_continue {
+    //Scripts.dump();
+    var a = 0;
+    var b = 0;
+    do {
+      if (a === 4) continue;
+      b += 1;
+    } while (a++ < 10);
+    assert_equal(b, 10, 'do-while continue');
+  }
+  
+  function test_do_while_break {
+    var a = 0;
+    var b = 0;
+    do {
+      if (a === 4) break;
+      b += 1;
+    } while (a++ < 10);
+    assert_equal(b, 4, 'do-while break');
+  }
+  
+  function test_for_1 {
+    // for ( /* empty */ ; _ ; _) { }
+    var a = 0;
+    var b = 0;
+    for (; a < 10; ++a) {
+      b += 1;
+    }
+    assert_equal(a, 10, 'for 1.1');
+    assert_equal(b, 10, 'for 1.2');
+  }
+  
+  function test_for_2 {
+    // for ( variable_def_inner ; _ ; _) { }
+    var a = void;
+    var b = void;
+    var c = 0;
+    for (var a = 0, b = 1; a < 10; ++a) {
+      c += 1;
+    }
+    assert_equal(a, void, 'for 2.1');
+    assert_equal(b, void, 'for 2.2');
+    assert_equal(c, 10,   'for 2.3');
+  }
+  
+  function test_for_statement {
+    var b = void;
+    for (var a = 0; a < 10; ++a) var b = a;
+    assert_equal(b, void, 'for statement 1');
+    var c = 0;
+    var d = void;
+    for (; c < 10; ++c) var d = c;
+    assert_equal(d, void, 'for statement 2');
+    // 公式の仕様では for ( ; expr ; expr ) statement は
+    // for ( expr ; expr ; expr ) statement や for ( ; expr ; expr ) { statement } と異なる動作をする
+    // したがって以下が正しい
+    //assert_equal(d, 9, 'for statement 2');
+  }
+  
+  function test_for_continue() {
+    var x = 0;
+    for (var a = 0; a < 10; ++a) {
+      {
+        var x = 0;
+        if (a % 2 === 0) {
+          var x = 0;
+          continue;
+        }
+      }
+      x += a;
+    }
+    assert_equal(x, 1 + 3 + 5 + 7 + 9, 'for continue');
+  }
+  
+  function test_for_break() {
+    var x = 0;
+    for (var a = 0; a < 10; ++a) {
+      {
+        if (a === 4) {
+          var x = 0;
+          break;
+        }
+      }
+      x += a;
+    }
+    assert_equal(x, 0 + 1 + 2 + 3, 'for continue');
+  }
+}

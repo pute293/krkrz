@@ -1,0 +1,72 @@
+(new TestForIn()).run();
+
+class TestForIn extends Test {
+  
+  var name = 'FOR-IN';
+  var tests = [
+    'test_forin_1',
+    'test_forin_2',
+    'test_forin_3',
+    'test_forin_4'
+  ];
+  
+  function test_forin_1 {
+    var a = void;
+    var array0 = [10, 11, 12, 13, 14, 15];
+    var array1 = [];
+    for [ var a in array0 ] { array1.add(a); }
+    assert_equal(a, void, 'for-in scope 1');
+    assert(simple_equals(array0, array1), 'for-in 1.1');
+    assert(simple_equals(array0, [10,11,12,13,14,15]), 'for-in 1.2');
+    for [ var a in [10, 20, 30] ] { array1.add(a); }
+    assert(simple_equals(array1, [10,11,12,13,14,15,10,20,30]), 'for-in 1.3');
+    for [ a in [10, 20, 30] ] { array1.add(a); }
+    assert_equal(a, 30, 'for-in scope2');
+    assert(simple_equals(array1, [10,11,12,13,14,15,10,20,30,10,20,30]), 'for-in 1.4');
+  }
+  
+  function test_forin_2 {
+    var array0 = [10, 11, 12, 13, 14, 15];
+    var array1 = [];
+    var i = 0;
+    var r0, r1;
+    for [ var item, idx, ary, r0 : int = 1, r1 = 2, r2 in array0 ] {
+      array1.add(item);
+      assert_equal(i, idx,      'for-in index');
+      assert_equal(array0, ary, 'for-in identical');
+      assert_equal(r0, 1,    'for-in remain1');
+      assert_equal(r1, 2,    'for-in remain2');
+      assert_equal(r2, void, 'for-in remain3');
+      i += 1;
+    }
+    assert(simple_equals(array0, array1), 'for-in 2');
+    assert(simple_equals(array0, [10,11,12,13,14,15]), 'for-in 1');
+    assert_equal(r0, void, 'for-in hidden 1');
+    assert_equal(r1, void, 'for-in hidden 2');
+  }
+  
+  function test_forin_3 {
+    var array0 = [10, 11, 12, 13, 14, 15];
+    var array1 = [];
+    var item, idx, ary, r0, r1, r2;
+    for [ item, idx, ary, r0 : int = 1, r1 = 2, r2 in array0 ] {
+      array1.add(item);
+      assert_equal(r0, 1,    'for-in 3 remain1');
+      assert_equal(r1, 2,    'for-in 3 remain2');
+      assert_equal(r2, void, 'for-in 3 remain3');
+    }
+    assert(simple_equals(array0, array1), 'for-in 3.1');
+    assert_equal(item, 15, 'for-in 3.2');
+    assert_equal(idx, 5,    'for-in 3.3');
+    assert_equal(r0, 1,     'for-in 3.4');
+    assert_equal(r1, 2,     'for-in 3.5');
+    assert_equal(r2, void,  'for-in 3.6');
+  }
+  
+  function test_forin_4 {
+    for [ item in [ 0, 1, 2 ] ] { }
+    // this must raise exception!
+  }
+  
+}
+

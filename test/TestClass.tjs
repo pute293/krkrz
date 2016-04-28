@@ -1,0 +1,84 @@
+class Test {
+  
+  var tests = [];
+  var name;
+  
+  function Test(name) {
+    this.name = name;
+  }
+  
+  function puts(str) {
+    Debug.message(str);
+  }
+  
+  function assert_equal(v, expected, str='') {
+    if (v === expected) return true;
+    var ex = expected;
+    if (ex === void) ex = 'void';
+    else if (ex === null) ex = 'null';
+    if (v === void) v = 'void';
+    else if (v === null) v = 'null';
+    str = str.length ? @'${str}: ' : '';
+    throw new Exception(@'${str}${ex} is expected, but ${v}');
+  }
+  
+  function assert_not_equal(v, not_expected, str='') {
+    if (v !== not_expected) return true;
+    var ex = not_expected;
+    if (ex === void) ex = 'void';
+    else if (ex === null) ex = 'null';
+    if (v === void) v = 'void';
+    else if (v === null) v = 'null';
+    str = str.length ? @'${str}: ' : '';
+    throw new Exception(@'${str}${ex} is not expected, but ${v}');
+  }
+  
+  function assert_throw(fn, str='') {
+    try { fn(); } catch { return true; }
+    throw new Exception(str);
+  }
+  
+  function assert_array_equal(v, expected, str='') {
+    var str1 = str.length ? @'${str}: ' : '';
+    if (!(v instanceof 'Array') || !(expected instanceof 'Array'))
+      throw new Exception(@'${str1}non-array object given');
+    if (v.count !== expected.count)
+      throw new Exception(@'${str1}expected length is ${expected.count}, but ${v.count}');
+    for (var i = 0, e = v.count; i < e; ++i) {
+      var x = v[i];
+      var y = expected[i];
+      if (x instanceof 'Array') {
+        assert_array_equal(x, y, str);
+      } else if (x !== y) {
+        if (x === void) x = 'void';
+        else if (x === null) x = 'null';
+        if (y === void) y = 'void';
+        else if (y === null) y = 'null';
+        throw new Exception(@'${str1}[at index ${i}] ${y} is expected, but ${x}');
+      }
+    }
+    return true;
+  }
+  
+  function setup() { }
+  
+  function teardown() { }
+  
+  function run() {
+    puts(@'@@@ TEST ${name} ==============================');
+    setup();
+    var result = [];
+    for (var i = 0; i < tests.count; ++i) {
+      var test = tests[i];
+      try {
+        this[test]();
+        result.add(@'\033[32m  ${test}: success\033[0m');
+      } catch (e) {
+        result.add(@'\033[31m  ${test}: ${e.message}\033[0m');
+      }
+    }
+    teardown();
+    for (var i = 0; i < result.count; ++i) puts(result[i]);
+    puts(@'$$$ TEST ${name} ==============================');
+  }
+}

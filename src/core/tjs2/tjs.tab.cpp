@@ -730,26 +730,26 @@ static const yytype_uint16 yyrline[] =
      330,   331,   336,   340,   341,   348,   349,   354,   356,   361,
      363,   364,   365,   366,   367,   368,   373,   373,   383,   383,
      396,   398,   399,   400,   404,   406,   410,   411,   415,   417,
-     422,   424,   440,   440,   451,   452,   457,   458,   459,   465,
-     464,   473,   474,   475,   476,   480,   480,   491,   491,   500,
-     501,   507,   507,   514,   516,   517,   517,   522,   523,   527,
-     532,   533,   540,   539,   547,   546,   553,   554,   559,   559,
-     566,   567,   568,   574,   579,   583,   584,   589,   590,   595,
-     596,   597,   598,   599,   600,   601,   602,   603,   604,   605,
-     606,   607,   608,   609,   610,   611,   616,   617,   625,   626,
-     630,   631,   636,   637,   641,   642,   646,   647,   651,   652,
-     653,   654,   655,   659,   660,   661,   662,   663,   667,   668,
-     669,   670,   675,   676,   677,   681,   682,   683,   684,   685,
-     689,   693,   694,   695,   696,   697,   698,   699,   700,   701,
-     702,   703,   704,   705,   706,   707,   708,   709,   710,   711,
-     712,   713,   714,   715,   716,   720,   721,   726,   727,   728,
-     729,   730,   730,   734,   735,   736,   737,   737,   745,   747,
-     750,   751,   752,   753,   754,   755,   756,   757,   758,   759,
-     760,   760,   763,   763,   771,   776,   777,   778,   782,   783,
-     784,   785,   791,   791,   800,   801,   806,   807,   812,   812,
-     822,   824,   825,   830,   831,   838,   840,   847,   847,   857,
-     859,   865,   866,   872,   873,   874,   875,   876,   877,   882,
-     882,   894,   896,   897,   902,   903,   904,   905,   906,   907
+     422,   424,   440,   440,   448,   449,   453,   454,   455,   461,
+     460,   469,   470,   471,   472,   476,   476,   487,   487,   496,
+     497,   503,   503,   510,   512,   513,   513,   518,   519,   523,
+     528,   529,   536,   535,   543,   542,   549,   550,   555,   555,
+     562,   563,   564,   570,   575,   579,   580,   585,   586,   591,
+     592,   593,   594,   595,   596,   597,   598,   599,   600,   601,
+     602,   603,   604,   605,   606,   607,   612,   613,   621,   622,
+     626,   627,   632,   633,   637,   638,   642,   643,   647,   648,
+     649,   650,   651,   655,   656,   657,   658,   659,   663,   664,
+     665,   666,   671,   672,   673,   677,   678,   679,   680,   681,
+     685,   689,   690,   691,   692,   693,   694,   695,   696,   697,
+     698,   699,   700,   701,   702,   703,   704,   705,   706,   707,
+     708,   709,   710,   711,   712,   716,   717,   722,   723,   724,
+     725,   726,   726,   730,   731,   732,   733,   733,   741,   743,
+     746,   747,   748,   749,   750,   751,   752,   753,   754,   755,
+     756,   756,   759,   759,   767,   772,   773,   774,   778,   779,
+     780,   781,   787,   787,   796,   797,   802,   803,   808,   808,
+     818,   820,   821,   826,   827,   834,   836,   843,   843,   853,
+     855,   861,   862,   868,   869,   870,   871,   872,   873,   878,
+     878,   890,   892,   893,   898,   899,   900,   901,   902,   903
 };
 #endif
 
@@ -1620,11 +1620,11 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
 # else
   YYUSE (yyoutput);
 # endif
-  /*switch (yytype)
+  switch (yytype)
     {
       default:
 	break;
-    }*/
+    }
 }
 
 
@@ -1985,12 +1985,12 @@ yydestruct (yymsg, yytype, yyvaluep)
     yymsg = "Deleting";
   YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
-  /*switch (yytype)
+  switch (yytype)
     {
 
       default:
 	break;
-    }*/
+    }
 }
 
 /* Prevent warnings from -Wmissing-prototypes.  */
@@ -2589,28 +2589,28 @@ yyreduce:
   case 84:
 
 /* Line 1464 of yacc.c  */
-#line 451 "syntax/tjs.y"
+#line 448 "syntax/tjs.y"
     { cc->AddFunctionDeclArg(lx->GetString((yyvsp[(1) - (2)].num)), NULL); ;}
     break;
 
   case 86:
 
 /* Line 1464 of yacc.c  */
-#line 457 "syntax/tjs.y"
+#line 453 "syntax/tjs.y"
     { cc->ReturnFromFunc(NULL); ;}
     break;
 
   case 87:
 
 /* Line 1464 of yacc.c  */
-#line 458 "syntax/tjs.y"
+#line 454 "syntax/tjs.y"
     { cc->ReturnFromFunc((yyvsp[(2) - (3)].np)); ;}
     break;
 
   case 89:
 
 /* Line 1464 of yacc.c  */
-#line 465 "syntax/tjs.y"
+#line 461 "syntax/tjs.y"
     { sb->PushContextStack(
 												lx->GetString((yyvsp[(2) - (3)].num)),
 												ctProperty); ;}
@@ -2619,14 +2619,14 @@ yyreduce:
   case 90:
 
 /* Line 1464 of yacc.c  */
-#line 469 "syntax/tjs.y"
+#line 465 "syntax/tjs.y"
     { sb->PopContextStack(); ;}
     break;
 
   case 95:
 
 /* Line 1464 of yacc.c  */
-#line 480 "syntax/tjs.y"
+#line 476 "syntax/tjs.y"
     { sb->PushContextStack(
 												TJS_W("(setter)"),
 												ctPropertySetter);
@@ -2638,7 +2638,7 @@ yyreduce:
   case 96:
 
 /* Line 1464 of yacc.c  */
-#line 486 "syntax/tjs.y"
+#line 482 "syntax/tjs.y"
     { cc->ExitBlock();
 											  sb->PopContextStack(); ;}
     break;
@@ -2646,7 +2646,7 @@ yyreduce:
   case 97:
 
 /* Line 1464 of yacc.c  */
-#line 491 "syntax/tjs.y"
+#line 487 "syntax/tjs.y"
     { sb->PushContextStack(
 												TJS_W("(getter)"),
 												ctPropertyGetter);
@@ -2656,7 +2656,7 @@ yyreduce:
   case 98:
 
 /* Line 1464 of yacc.c  */
-#line 495 "syntax/tjs.y"
+#line 491 "syntax/tjs.y"
     { cc->ExitBlock();
 											  sb->PopContextStack(); ;}
     break;
@@ -2664,7 +2664,7 @@ yyreduce:
   case 101:
 
 /* Line 1464 of yacc.c  */
-#line 507 "syntax/tjs.y"
+#line 503 "syntax/tjs.y"
     { sb->PushContextStack(
 												lx->GetString((yyvsp[(2) - (2)].num)),
 												ctClass); ;}
@@ -2673,119 +2673,119 @@ yyreduce:
   case 102:
 
 /* Line 1464 of yacc.c  */
-#line 511 "syntax/tjs.y"
+#line 507 "syntax/tjs.y"
     { sb->PopContextStack(); ;}
     break;
 
   case 104:
 
 /* Line 1464 of yacc.c  */
-#line 516 "syntax/tjs.y"
+#line 512 "syntax/tjs.y"
     { cc->CreateExtendsExprCode((yyvsp[(2) - (2)].np), true); ;}
     break;
 
   case 105:
 
 /* Line 1464 of yacc.c  */
-#line 517 "syntax/tjs.y"
+#line 513 "syntax/tjs.y"
     { cc->CreateExtendsExprCode((yyvsp[(2) - (3)].np), false); ;}
     break;
 
   case 109:
 
 /* Line 1464 of yacc.c  */
-#line 527 "syntax/tjs.y"
+#line 523 "syntax/tjs.y"
     { cc->CreateExtendsExprCode((yyvsp[(1) - (1)].np), false); ;}
     break;
 
   case 110:
 
 /* Line 1464 of yacc.c  */
-#line 532 "syntax/tjs.y"
+#line 528 "syntax/tjs.y"
     { cc->ReturnFromFunc(NULL); ;}
     break;
 
   case 111:
 
 /* Line 1464 of yacc.c  */
-#line 533 "syntax/tjs.y"
+#line 529 "syntax/tjs.y"
     { cc->ReturnFromFunc((yyvsp[(2) - (3)].np)); ;}
     break;
 
   case 112:
 
 /* Line 1464 of yacc.c  */
-#line 540 "syntax/tjs.y"
+#line 536 "syntax/tjs.y"
     { cc->EnterSwitchCode((yyvsp[(3) - (4)].np)); ;}
     break;
 
   case 113:
 
 /* Line 1464 of yacc.c  */
-#line 541 "syntax/tjs.y"
+#line 537 "syntax/tjs.y"
     { cc->ExitSwitchCode(); ;}
     break;
 
   case 114:
 
 /* Line 1464 of yacc.c  */
-#line 547 "syntax/tjs.y"
+#line 543 "syntax/tjs.y"
     { cc->EnterWithCode((yyvsp[(3) - (4)].np)); ;}
     break;
 
   case 115:
 
 /* Line 1464 of yacc.c  */
-#line 548 "syntax/tjs.y"
+#line 544 "syntax/tjs.y"
     { cc->ExitWithCode(); ;}
     break;
 
   case 116:
 
 /* Line 1464 of yacc.c  */
-#line 553 "syntax/tjs.y"
+#line 549 "syntax/tjs.y"
     { cc->ProcessCaseCode((yyvsp[(2) - (3)].np)); ;}
     break;
 
   case 117:
 
 /* Line 1464 of yacc.c  */
-#line 554 "syntax/tjs.y"
+#line 550 "syntax/tjs.y"
     { cc->ProcessCaseCode(NULL); ;}
     break;
 
   case 118:
 
 /* Line 1464 of yacc.c  */
-#line 559 "syntax/tjs.y"
+#line 555 "syntax/tjs.y"
     { cc->EnterTryCode(); ;}
     break;
 
   case 119:
 
 /* Line 1464 of yacc.c  */
-#line 562 "syntax/tjs.y"
+#line 558 "syntax/tjs.y"
     { cc->ExitTryCode(); ;}
     break;
 
   case 120:
 
 /* Line 1464 of yacc.c  */
-#line 566 "syntax/tjs.y"
+#line 562 "syntax/tjs.y"
     { cc->EnterCatchCode(NULL); ;}
     break;
 
   case 121:
 
 /* Line 1464 of yacc.c  */
-#line 567 "syntax/tjs.y"
+#line 563 "syntax/tjs.y"
     { cc->EnterCatchCode(NULL); ;}
     break;
 
   case 122:
 
 /* Line 1464 of yacc.c  */
-#line 568 "syntax/tjs.y"
+#line 564 "syntax/tjs.y"
     { cc->EnterCatchCode(
 												lx->GetString((yyvsp[(3) - (4)].num))); ;}
     break;
@@ -2793,630 +2793,630 @@ yyreduce:
   case 123:
 
 /* Line 1464 of yacc.c  */
-#line 574 "syntax/tjs.y"
+#line 570 "syntax/tjs.y"
     { cc->ProcessThrowCode((yyvsp[(2) - (3)].np)); ;}
     break;
 
   case 124:
 
 /* Line 1464 of yacc.c  */
-#line 579 "syntax/tjs.y"
+#line 575 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 125:
 
 /* Line 1464 of yacc.c  */
-#line 583 "syntax/tjs.y"
+#line 579 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 126:
 
 /* Line 1464 of yacc.c  */
-#line 584 "syntax/tjs.y"
+#line 580 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_IF, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 127:
 
 /* Line 1464 of yacc.c  */
-#line 589 "syntax/tjs.y"
+#line 585 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 128:
 
 /* Line 1464 of yacc.c  */
-#line 590 "syntax/tjs.y"
+#line 586 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_COMMA, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 129:
 
 /* Line 1464 of yacc.c  */
-#line 595 "syntax/tjs.y"
+#line 591 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 130:
 
 /* Line 1464 of yacc.c  */
-#line 596 "syntax/tjs.y"
+#line 592 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_SWAP, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 131:
 
 /* Line 1464 of yacc.c  */
-#line 597 "syntax/tjs.y"
+#line 593 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_EQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 132:
 
 /* Line 1464 of yacc.c  */
-#line 598 "syntax/tjs.y"
+#line 594 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_AMPERSANDEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 133:
 
 /* Line 1464 of yacc.c  */
-#line 599 "syntax/tjs.y"
+#line 595 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_VERTLINEEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 134:
 
 /* Line 1464 of yacc.c  */
-#line 600 "syntax/tjs.y"
+#line 596 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_CHEVRONEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 135:
 
 /* Line 1464 of yacc.c  */
-#line 601 "syntax/tjs.y"
+#line 597 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_MINUSEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 136:
 
 /* Line 1464 of yacc.c  */
-#line 602 "syntax/tjs.y"
+#line 598 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_PLUSEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 137:
 
 /* Line 1464 of yacc.c  */
-#line 603 "syntax/tjs.y"
+#line 599 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_PERCENTEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 138:
 
 /* Line 1464 of yacc.c  */
-#line 604 "syntax/tjs.y"
+#line 600 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_SLASHEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 139:
 
 /* Line 1464 of yacc.c  */
-#line 605 "syntax/tjs.y"
+#line 601 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_BACKSLASHEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 140:
 
 /* Line 1464 of yacc.c  */
-#line 606 "syntax/tjs.y"
+#line 602 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_ASTERISKEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 141:
 
 /* Line 1464 of yacc.c  */
-#line 607 "syntax/tjs.y"
+#line 603 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LOGICALOREQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 142:
 
 /* Line 1464 of yacc.c  */
-#line 608 "syntax/tjs.y"
+#line 604 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LOGICALANDEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 143:
 
 /* Line 1464 of yacc.c  */
-#line 609 "syntax/tjs.y"
+#line 605 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_RARITHSHIFTEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 144:
 
 /* Line 1464 of yacc.c  */
-#line 610 "syntax/tjs.y"
+#line 606 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LARITHSHIFTEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 145:
 
 /* Line 1464 of yacc.c  */
-#line 611 "syntax/tjs.y"
+#line 607 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_RBITSHIFTEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 146:
 
 /* Line 1464 of yacc.c  */
-#line 616 "syntax/tjs.y"
+#line 612 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 147:
 
 /* Line 1464 of yacc.c  */
-#line 619 "syntax/tjs.y"
+#line 615 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP3(T_QUESTION, (yyvsp[(1) - (5)].np), (yyvsp[(3) - (5)].np), (yyvsp[(5) - (5)].np)); ;}
     break;
 
   case 148:
 
 /* Line 1464 of yacc.c  */
-#line 625 "syntax/tjs.y"
+#line 621 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 149:
 
 /* Line 1464 of yacc.c  */
-#line 626 "syntax/tjs.y"
+#line 622 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LOGICALOR, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 150:
 
 /* Line 1464 of yacc.c  */
-#line 630 "syntax/tjs.y"
+#line 626 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 151:
 
 /* Line 1464 of yacc.c  */
-#line 632 "syntax/tjs.y"
+#line 628 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LOGICALAND, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 152:
 
 /* Line 1464 of yacc.c  */
-#line 636 "syntax/tjs.y"
+#line 632 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 153:
 
 /* Line 1464 of yacc.c  */
-#line 637 "syntax/tjs.y"
+#line 633 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_VERTLINE, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 154:
 
 /* Line 1464 of yacc.c  */
-#line 641 "syntax/tjs.y"
+#line 637 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 155:
 
 /* Line 1464 of yacc.c  */
-#line 642 "syntax/tjs.y"
+#line 638 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_CHEVRON, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 156:
 
 /* Line 1464 of yacc.c  */
-#line 646 "syntax/tjs.y"
+#line 642 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 157:
 
 /* Line 1464 of yacc.c  */
-#line 647 "syntax/tjs.y"
+#line 643 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_AMPERSAND, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 158:
 
 /* Line 1464 of yacc.c  */
-#line 651 "syntax/tjs.y"
+#line 647 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 159:
 
 /* Line 1464 of yacc.c  */
-#line 652 "syntax/tjs.y"
+#line 648 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_NOTEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 160:
 
 /* Line 1464 of yacc.c  */
-#line 653 "syntax/tjs.y"
+#line 649 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_EQUALEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 161:
 
 /* Line 1464 of yacc.c  */
-#line 654 "syntax/tjs.y"
+#line 650 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_DISCNOTEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 162:
 
 /* Line 1464 of yacc.c  */
-#line 655 "syntax/tjs.y"
+#line 651 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_DISCEQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 163:
 
 /* Line 1464 of yacc.c  */
-#line 659 "syntax/tjs.y"
+#line 655 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 164:
 
 /* Line 1464 of yacc.c  */
-#line 660 "syntax/tjs.y"
+#line 656 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LT, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 165:
 
 /* Line 1464 of yacc.c  */
-#line 661 "syntax/tjs.y"
+#line 657 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_GT, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 166:
 
 /* Line 1464 of yacc.c  */
-#line 662 "syntax/tjs.y"
+#line 658 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LTOREQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 167:
 
 /* Line 1464 of yacc.c  */
-#line 663 "syntax/tjs.y"
+#line 659 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_GTOREQUAL, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 168:
 
 /* Line 1464 of yacc.c  */
-#line 667 "syntax/tjs.y"
+#line 663 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 169:
 
 /* Line 1464 of yacc.c  */
-#line 668 "syntax/tjs.y"
+#line 664 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_RARITHSHIFT, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 170:
 
 /* Line 1464 of yacc.c  */
-#line 669 "syntax/tjs.y"
+#line 665 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LARITHSHIFT, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 171:
 
 /* Line 1464 of yacc.c  */
-#line 670 "syntax/tjs.y"
+#line 666 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_RBITSHIFT, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 172:
 
 /* Line 1464 of yacc.c  */
-#line 675 "syntax/tjs.y"
+#line 671 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 173:
 
 /* Line 1464 of yacc.c  */
-#line 676 "syntax/tjs.y"
+#line 672 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_PLUS, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 174:
 
 /* Line 1464 of yacc.c  */
-#line 677 "syntax/tjs.y"
+#line 673 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_MINUS, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 175:
 
 /* Line 1464 of yacc.c  */
-#line 681 "syntax/tjs.y"
+#line 677 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 176:
 
 /* Line 1464 of yacc.c  */
-#line 682 "syntax/tjs.y"
+#line 678 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_PERCENT, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 177:
 
 /* Line 1464 of yacc.c  */
-#line 683 "syntax/tjs.y"
+#line 679 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_SLASH, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 178:
 
 /* Line 1464 of yacc.c  */
-#line 684 "syntax/tjs.y"
+#line 680 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_BACKSLASH, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 179:
 
 /* Line 1464 of yacc.c  */
-#line 685 "syntax/tjs.y"
+#line 681 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_ASTERISK, (yyvsp[(1) - (2)].np), (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 180:
 
 /* Line 1464 of yacc.c  */
-#line 689 "syntax/tjs.y"
+#line 685 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (2)].np); ;}
     break;
 
   case 181:
 
 /* Line 1464 of yacc.c  */
-#line 693 "syntax/tjs.y"
+#line 689 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 182:
 
 /* Line 1464 of yacc.c  */
-#line 694 "syntax/tjs.y"
+#line 690 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_EXCRAMATION, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 183:
 
 /* Line 1464 of yacc.c  */
-#line 695 "syntax/tjs.y"
+#line 691 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_TILDE, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 184:
 
 /* Line 1464 of yacc.c  */
-#line 696 "syntax/tjs.y"
+#line 692 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_DECREMENT, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 185:
 
 /* Line 1464 of yacc.c  */
-#line 697 "syntax/tjs.y"
+#line 693 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_INCREMENT, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 186:
 
 /* Line 1464 of yacc.c  */
-#line 698 "syntax/tjs.y"
+#line 694 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(2) - (2)].np); (yyval.np)->SetOpecode(T_NEW); ;}
     break;
 
   case 187:
 
 /* Line 1464 of yacc.c  */
-#line 699 "syntax/tjs.y"
+#line 695 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_INVALIDATE, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 188:
 
 /* Line 1464 of yacc.c  */
-#line 700 "syntax/tjs.y"
+#line 696 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_ISVALID, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 189:
 
 /* Line 1464 of yacc.c  */
-#line 701 "syntax/tjs.y"
+#line 697 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_ISVALID, (yyvsp[(1) - (2)].np)); ;}
     break;
 
   case 190:
 
 /* Line 1464 of yacc.c  */
-#line 702 "syntax/tjs.y"
+#line 698 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_DELETE, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 191:
 
 /* Line 1464 of yacc.c  */
-#line 703 "syntax/tjs.y"
+#line 699 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_TYPEOF, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 192:
 
 /* Line 1464 of yacc.c  */
-#line 704 "syntax/tjs.y"
+#line 700 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_SHARP, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 193:
 
 /* Line 1464 of yacc.c  */
-#line 705 "syntax/tjs.y"
+#line 701 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_DOLLAR, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 194:
 
 /* Line 1464 of yacc.c  */
-#line 706 "syntax/tjs.y"
+#line 702 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_UPLUS, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 195:
 
 /* Line 1464 of yacc.c  */
-#line 707 "syntax/tjs.y"
+#line 703 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_UMINUS, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 196:
 
 /* Line 1464 of yacc.c  */
-#line 708 "syntax/tjs.y"
+#line 704 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_IGNOREPROP, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 197:
 
 /* Line 1464 of yacc.c  */
-#line 709 "syntax/tjs.y"
+#line 705 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_PROPACCESS, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 198:
 
 /* Line 1464 of yacc.c  */
-#line 710 "syntax/tjs.y"
+#line 706 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_INSTANCEOF, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 199:
 
 /* Line 1464 of yacc.c  */
-#line 711 "syntax/tjs.y"
+#line 707 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_INT, (yyvsp[(4) - (4)].np)); ;}
     break;
 
   case 200:
 
 /* Line 1464 of yacc.c  */
-#line 712 "syntax/tjs.y"
+#line 708 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_INT, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 201:
 
 /* Line 1464 of yacc.c  */
-#line 713 "syntax/tjs.y"
+#line 709 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_REAL, (yyvsp[(4) - (4)].np)); ;}
     break;
 
   case 202:
 
 /* Line 1464 of yacc.c  */
-#line 714 "syntax/tjs.y"
+#line 710 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_REAL, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 203:
 
 /* Line 1464 of yacc.c  */
-#line 715 "syntax/tjs.y"
+#line 711 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_STRING, (yyvsp[(4) - (4)].np)); ;}
     break;
 
   case 204:
 
 /* Line 1464 of yacc.c  */
-#line 716 "syntax/tjs.y"
+#line 712 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_STRING, (yyvsp[(2) - (2)].np)); ;}
     break;
 
   case 205:
 
 /* Line 1464 of yacc.c  */
-#line 720 "syntax/tjs.y"
+#line 716 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 206:
 
 /* Line 1464 of yacc.c  */
-#line 722 "syntax/tjs.y"
+#line 718 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_INCONTEXTOF, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 207:
 
 /* Line 1464 of yacc.c  */
-#line 726 "syntax/tjs.y"
+#line 722 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 208:
 
 /* Line 1464 of yacc.c  */
-#line 727 "syntax/tjs.y"
+#line 723 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(2) - (3)].np); ;}
     break;
 
   case 209:
 
 /* Line 1464 of yacc.c  */
-#line 728 "syntax/tjs.y"
+#line 724 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LBRACKET, (yyvsp[(1) - (4)].np), (yyvsp[(3) - (4)].np)); ;}
     break;
 
   case 210:
 
 /* Line 1464 of yacc.c  */
-#line 729 "syntax/tjs.y"
+#line 725 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 211:
 
 /* Line 1464 of yacc.c  */
-#line 730 "syntax/tjs.y"
+#line 726 "syntax/tjs.y"
     { lx->SetNextIsBareWord(); ;}
     break;
 
   case 212:
 
 /* Line 1464 of yacc.c  */
-#line 731 "syntax/tjs.y"
+#line 727 "syntax/tjs.y"
     { tTJSExprNode * node = cc->MakeNP0(T_CONSTVAL);
 												  node->SetValue(lx->GetValue((yyvsp[(4) - (4)].num)));
 												  (yyval.np) = cc->MakeNP2(T_DOT, (yyvsp[(1) - (4)].np), node); ;}
@@ -3425,35 +3425,35 @@ yyreduce:
   case 213:
 
 /* Line 1464 of yacc.c  */
-#line 734 "syntax/tjs.y"
+#line 730 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_POSTINCREMENT, (yyvsp[(1) - (2)].np)); ;}
     break;
 
   case 214:
 
 /* Line 1464 of yacc.c  */
-#line 735 "syntax/tjs.y"
+#line 731 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_POSTDECREMENT, (yyvsp[(1) - (2)].np)); ;}
     break;
 
   case 215:
 
 /* Line 1464 of yacc.c  */
-#line 736 "syntax/tjs.y"
+#line 732 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_EVAL, (yyvsp[(1) - (2)].np)); ;}
     break;
 
   case 216:
 
 /* Line 1464 of yacc.c  */
-#line 737 "syntax/tjs.y"
+#line 733 "syntax/tjs.y"
     { lx->SetNextIsBareWord(); ;}
     break;
 
   case 217:
 
 /* Line 1464 of yacc.c  */
-#line 738 "syntax/tjs.y"
+#line 734 "syntax/tjs.y"
     { tTJSExprNode * node = cc->MakeNP0(T_CONSTVAL);
 												  node->SetValue(lx->GetValue((yyvsp[(3) - (3)].num)));
 												  (yyval.np) = cc->MakeNP1(T_WITHDOT, node); ;}
@@ -3462,7 +3462,7 @@ yyreduce:
   case 218:
 
 /* Line 1464 of yacc.c  */
-#line 745 "syntax/tjs.y"
+#line 741 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_CONSTVAL);
 												  (yyval.np)->SetValue(lx->GetValue((yyvsp[(1) - (1)].num))); ;}
     break;
@@ -3470,7 +3470,7 @@ yyreduce:
   case 219:
 
 /* Line 1464 of yacc.c  */
-#line 747 "syntax/tjs.y"
+#line 743 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_SYMBOL);
 												  (yyval.np)->SetValue(tTJSVariant(
 													lx->GetString((yyvsp[(1) - (1)].num)))); ;}
@@ -3479,84 +3479,84 @@ yyreduce:
   case 220:
 
 /* Line 1464 of yacc.c  */
-#line 750 "syntax/tjs.y"
+#line 746 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_THIS); ;}
     break;
 
   case 221:
 
 /* Line 1464 of yacc.c  */
-#line 751 "syntax/tjs.y"
+#line 747 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_SUPER); ;}
     break;
 
   case 222:
 
 /* Line 1464 of yacc.c  */
-#line 752 "syntax/tjs.y"
+#line 748 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 223:
 
 /* Line 1464 of yacc.c  */
-#line 753 "syntax/tjs.y"
+#line 749 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 224:
 
 /* Line 1464 of yacc.c  */
-#line 754 "syntax/tjs.y"
+#line 750 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_GLOBAL); ;}
     break;
 
   case 225:
 
 /* Line 1464 of yacc.c  */
-#line 755 "syntax/tjs.y"
+#line 751 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_VOID); ;}
     break;
 
   case 226:
 
 /* Line 1464 of yacc.c  */
-#line 756 "syntax/tjs.y"
+#line 752 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 227:
 
 /* Line 1464 of yacc.c  */
-#line 757 "syntax/tjs.y"
+#line 753 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 228:
 
 /* Line 1464 of yacc.c  */
-#line 758 "syntax/tjs.y"
+#line 754 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 229:
 
 /* Line 1464 of yacc.c  */
-#line 759 "syntax/tjs.y"
+#line 755 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 230:
 
 /* Line 1464 of yacc.c  */
-#line 760 "syntax/tjs.y"
+#line 756 "syntax/tjs.y"
     { lx->SetStartOfRegExp(); ;}
     break;
 
   case 231:
 
 /* Line 1464 of yacc.c  */
-#line 761 "syntax/tjs.y"
+#line 757 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_REGEXP);
 												  (yyval.np)->SetValue(lx->GetValue((yyvsp[(3) - (3)].num))); ;}
     break;
@@ -3564,14 +3564,14 @@ yyreduce:
   case 232:
 
 /* Line 1464 of yacc.c  */
-#line 763 "syntax/tjs.y"
+#line 759 "syntax/tjs.y"
     { lx->SetStartOfRegExp(); ;}
     break;
 
   case 233:
 
 /* Line 1464 of yacc.c  */
-#line 764 "syntax/tjs.y"
+#line 760 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_REGEXP);
 												  (yyval.np)->SetValue(lx->GetValue((yyvsp[(3) - (3)].num))); ;}
     break;
@@ -3579,63 +3579,63 @@ yyreduce:
   case 234:
 
 /* Line 1464 of yacc.c  */
-#line 771 "syntax/tjs.y"
+#line 767 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_LPARENTHESIS, (yyvsp[(1) - (4)].np), (yyvsp[(3) - (4)].np)); ;}
     break;
 
   case 235:
 
 /* Line 1464 of yacc.c  */
-#line 776 "syntax/tjs.y"
+#line 772 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP0(T_OMIT); ;}
     break;
 
   case 236:
 
 /* Line 1464 of yacc.c  */
-#line 777 "syntax/tjs.y"
+#line 773 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_ARG, (yyvsp[(1) - (1)].np)); ;}
     break;
 
   case 237:
 
 /* Line 1464 of yacc.c  */
-#line 778 "syntax/tjs.y"
+#line 774 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_ARG, (yyvsp[(3) - (3)].np), (yyvsp[(1) - (3)].np)); ;}
     break;
 
   case 238:
 
 /* Line 1464 of yacc.c  */
-#line 782 "syntax/tjs.y"
+#line 778 "syntax/tjs.y"
     { (yyval.np) = NULL; ;}
     break;
 
   case 239:
 
 /* Line 1464 of yacc.c  */
-#line 783 "syntax/tjs.y"
+#line 779 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_EXPANDARG, NULL); ;}
     break;
 
   case 240:
 
 /* Line 1464 of yacc.c  */
-#line 784 "syntax/tjs.y"
+#line 780 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_EXPANDARG, (yyvsp[(1) - (1)].np)); ;}
     break;
 
   case 241:
 
 /* Line 1464 of yacc.c  */
-#line 785 "syntax/tjs.y"
+#line 781 "syntax/tjs.y"
     { (yyval.np) = (yyvsp[(1) - (1)].np); ;}
     break;
 
   case 242:
 
 /* Line 1464 of yacc.c  */
-#line 791 "syntax/tjs.y"
+#line 787 "syntax/tjs.y"
     { tTJSExprNode *node =
 										  cc->MakeNP0(T_INLINEARRAY);
 										  cc->PushCurrentNode(node); ;}
@@ -3644,42 +3644,42 @@ yyreduce:
   case 243:
 
 /* Line 1464 of yacc.c  */
-#line 795 "syntax/tjs.y"
+#line 791 "syntax/tjs.y"
     { (yyval.np) = cn; cc->PopCurrentNode(); ;}
     break;
 
   case 244:
 
 /* Line 1464 of yacc.c  */
-#line 800 "syntax/tjs.y"
+#line 796 "syntax/tjs.y"
     { cn->Add((yyvsp[(1) - (1)].np)); ;}
     break;
 
   case 245:
 
 /* Line 1464 of yacc.c  */
-#line 801 "syntax/tjs.y"
+#line 797 "syntax/tjs.y"
     { cn->Add((yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 246:
 
 /* Line 1464 of yacc.c  */
-#line 806 "syntax/tjs.y"
+#line 802 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_ARRAYARG, NULL); ;}
     break;
 
   case 247:
 
 /* Line 1464 of yacc.c  */
-#line 807 "syntax/tjs.y"
+#line 803 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP1(T_ARRAYARG, (yyvsp[(1) - (1)].np)); ;}
     break;
 
   case 248:
 
 /* Line 1464 of yacc.c  */
-#line 812 "syntax/tjs.y"
+#line 808 "syntax/tjs.y"
     { tTJSExprNode *node =
 										  cc->MakeNP0(T_INLINEDIC);
 										  cc->PushCurrentNode(node); ;}
@@ -3688,35 +3688,35 @@ yyreduce:
   case 249:
 
 /* Line 1464 of yacc.c  */
-#line 817 "syntax/tjs.y"
+#line 813 "syntax/tjs.y"
     { (yyval.np) = cn; cc->PopCurrentNode(); ;}
     break;
 
   case 251:
 
 /* Line 1464 of yacc.c  */
-#line 824 "syntax/tjs.y"
+#line 820 "syntax/tjs.y"
     { cn->Add((yyvsp[(1) - (1)].np)); ;}
     break;
 
   case 252:
 
 /* Line 1464 of yacc.c  */
-#line 825 "syntax/tjs.y"
+#line 821 "syntax/tjs.y"
     { cn->Add((yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 253:
 
 /* Line 1464 of yacc.c  */
-#line 830 "syntax/tjs.y"
+#line 826 "syntax/tjs.y"
     { (yyval.np) = cc->MakeNP2(T_DICELM, (yyvsp[(1) - (3)].np), (yyvsp[(3) - (3)].np)); ;}
     break;
 
   case 254:
 
 /* Line 1464 of yacc.c  */
-#line 831 "syntax/tjs.y"
+#line 827 "syntax/tjs.y"
     { tTJSVariant val(lx->GetString((yyvsp[(1) - (3)].num)));
 										  tTJSExprNode *node0 = cc->MakeNP0(T_CONSTVAL);
 										  node0->SetValue(val);
@@ -3726,7 +3726,7 @@ yyreduce:
   case 257:
 
 /* Line 1464 of yacc.c  */
-#line 847 "syntax/tjs.y"
+#line 843 "syntax/tjs.y"
     { tTJSExprNode *node =
 										  cc->MakeNP0(T_CONSTVAL);
 										  iTJSDispatch2 * dsp = TJSCreateArrayObject();
@@ -3738,56 +3738,56 @@ yyreduce:
   case 258:
 
 /* Line 1464 of yacc.c  */
-#line 854 "syntax/tjs.y"
+#line 850 "syntax/tjs.y"
     { (yyval.np) = cn; cc->PopCurrentNode(); ;}
     break;
 
   case 263:
 
 /* Line 1464 of yacc.c  */
-#line 872 "syntax/tjs.y"
+#line 868 "syntax/tjs.y"
     { cn->AddArrayElement(- lx->GetValue((yyvsp[(2) - (2)].num))); ;}
     break;
 
   case 264:
 
 /* Line 1464 of yacc.c  */
-#line 873 "syntax/tjs.y"
+#line 869 "syntax/tjs.y"
     { cn->AddArrayElement(+ lx->GetValue((yyvsp[(2) - (2)].num))); ;}
     break;
 
   case 265:
 
 /* Line 1464 of yacc.c  */
-#line 874 "syntax/tjs.y"
+#line 870 "syntax/tjs.y"
     { cn->AddArrayElement(lx->GetValue((yyvsp[(1) - (1)].num))); ;}
     break;
 
   case 266:
 
 /* Line 1464 of yacc.c  */
-#line 875 "syntax/tjs.y"
+#line 871 "syntax/tjs.y"
     { cn->AddArrayElement(tTJSVariant());  ;}
     break;
 
   case 267:
 
 /* Line 1464 of yacc.c  */
-#line 876 "syntax/tjs.y"
+#line 872 "syntax/tjs.y"
     { cn->AddArrayElement((yyvsp[(1) - (1)].np)->GetValue()); ;}
     break;
 
   case 268:
 
 /* Line 1464 of yacc.c  */
-#line 877 "syntax/tjs.y"
+#line 873 "syntax/tjs.y"
     { cn->AddArrayElement((yyvsp[(1) - (1)].np)->GetValue()); ;}
     break;
 
   case 269:
 
 /* Line 1464 of yacc.c  */
-#line 882 "syntax/tjs.y"
+#line 878 "syntax/tjs.y"
     { tTJSExprNode *node =
 										  cc->MakeNP0(T_CONSTVAL);
 										  iTJSDispatch2 * dsp = TJSCreateDictionaryObject();
@@ -3799,49 +3799,49 @@ yyreduce:
   case 270:
 
 /* Line 1464 of yacc.c  */
-#line 889 "syntax/tjs.y"
+#line 885 "syntax/tjs.y"
     { (yyval.np) = cn; cc->PopCurrentNode(); ;}
     break;
 
   case 274:
 
 /* Line 1464 of yacc.c  */
-#line 902 "syntax/tjs.y"
+#line 898 "syntax/tjs.y"
     { cn->AddDictionaryElement(lx->GetValue((yyvsp[(1) - (4)].num)), - lx->GetValue((yyvsp[(4) - (4)].num))); ;}
     break;
 
   case 275:
 
 /* Line 1464 of yacc.c  */
-#line 903 "syntax/tjs.y"
+#line 899 "syntax/tjs.y"
     { cn->AddDictionaryElement(lx->GetValue((yyvsp[(1) - (4)].num)), + lx->GetValue((yyvsp[(4) - (4)].num))); ;}
     break;
 
   case 276:
 
 /* Line 1464 of yacc.c  */
-#line 904 "syntax/tjs.y"
+#line 900 "syntax/tjs.y"
     { cn->AddDictionaryElement(lx->GetValue((yyvsp[(1) - (3)].num)), lx->GetValue((yyvsp[(3) - (3)].num))); ;}
     break;
 
   case 277:
 
 /* Line 1464 of yacc.c  */
-#line 905 "syntax/tjs.y"
+#line 901 "syntax/tjs.y"
     { cn->AddDictionaryElement(lx->GetValue((yyvsp[(1) - (3)].num)), tTJSVariant()); ;}
     break;
 
   case 278:
 
 /* Line 1464 of yacc.c  */
-#line 906 "syntax/tjs.y"
+#line 902 "syntax/tjs.y"
     { cn->AddDictionaryElement(lx->GetValue((yyvsp[(1) - (3)].num)), (yyvsp[(3) - (3)].np)->GetValue()); ;}
     break;
 
   case 279:
 
 /* Line 1464 of yacc.c  */
-#line 907 "syntax/tjs.y"
+#line 903 "syntax/tjs.y"
     { cn->AddDictionaryElement(lx->GetValue((yyvsp[(1) - (3)].num)), (yyvsp[(3) - (3)].np)->GetValue()); ;}
     break;
 
@@ -4060,7 +4060,7 @@ yyreturn:
 
 
 /* Line 1684 of yacc.c  */
-#line 912 "syntax/tjs.y"
+#line 908 "syntax/tjs.y"
 
 
 

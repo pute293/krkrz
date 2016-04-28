@@ -1,0 +1,162 @@
+/* =============================================================================
+  # Enumerable
+    - python の iterable
+    - 継承クラスはプロパティ each を自前で実装する
+    - each は Enumerator を返すこと
+    - 継承クラスには各種メソッドが Enumerable から持ち込まれる
+  # Enumerator
+    - python の iterator
+    - 継承クラスはプロパティ next を自前で実装する
+    - 関数呼び出しが可能で、一引数関数を引数にとって next の結果を順次渡して呼び出す
+  # for in statement
+    - for (variable_def_inner in expr) block_or_statement
+    - for ((var|const|) a1, a2, a3, ..., an in *array*) *block_or_statement* は
+      for (var *$i* = 0; *$i* < *array*.count; ++*$i*) {
+        (var|const|) a1 = *array*[*$i*];
+        (var|const|) a2 = *array*.count;
+        (var|const|) a3 = *array*;
+        (var|const|) a4 = void;
+        (var|const|) a5 = void;
+        ...
+        (var|const|) an = void;
+        *block_or_statement*
+      }
+      の syntax sugar
+    - for ((var|const|) a1, a2, a3, ..., an in *array*) *block_or_statement* は
+    
+  
+  
+  # example
+    var p = Debug.message;
+    
+    var iter1 = new MyIterator();
+    iter1.next;
+    # => 1
+    iter1.next;
+    # => 2
+    iter1.next;
+    # => 3
+    iter1.next;
+    # => StopIteration
+    iter1.next;
+    # => StopIteration
+    
+    var iter2 = new MyIterator();
+    iter2(-> x [ p(x * 2) ]);
+    # => 1, 2, 3
+    iter2.next;
+    # => StopIteration
+    iter2(-> x [ p(x * 2) ]);
+    # => no output
+    
+    for (var x in new MyIterator()) {
+      # variable x is only valid in this block
+      x;
+      # => 1, 2, 3
+    }
+    x;
+    # => not found
+    
+    var y;
+    for (y in new MyIterator()) {
+      y;
+      # => 1, 2, 3
+    }
+    y;
+    # => 3
+    
+    var enum = new MyEnumerable();
+    enum.each(-> x [ x ]);
+    # => 1, 2, 3
+    enum.map(-> x [ x * 2 ]);
+    # => 2, 4, 6
+    
+    for (var x in enum) {
+      x;
+      # => 1, 2, 3
+    }
+    
+    var iter2 = enum.each;
+    
+    
+  
+  
+ ============================================================================ */
+
+
+var err = [];
+
+var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+testEnumerable();
+
+
+
+
+class A {
+  
+  var b = null;
+  
+  function A() {
+    b = new B();
+  }
+  
+  class B {
+    function a() { return b; }
+  }
+}
+
+class Iterable1 extends Iteratable {
+  
+  var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  
+  function getIterator() {
+    return new Iterator1(this);
+  }
+  
+  class Iterator1 extends Iterator {
+    
+    var iterable;
+    var idx;
+    
+    function Iterator1(iter) {
+      iterable = iter
+    }
+    
+    function next() {
+      
+    }
+    
+  }
+  
+}
+
+//function testEnumerable() {
+//  function _try(fn, str='') {
+//    try {
+//      assert(->[fn()], str);
+//    } catch (e) {
+//      err.push(str + '\n' + e.message);
+//    }
+//  }
+//  
+//  var en = new MyEnumerable();
+//  
+//  /*
+//    all_p
+//    any_p
+//    chunk
+//    map
+//    flatmap
+//    count
+//    
+//   */
+//  
+//  _try(->simple_equals(en.each(), array), 'setup');
+//  _try(->simple_equals(en.map(->x[x*2]), [0,2,4,6,8,10,12,14,16,18]), 'map');
+//  _try(->simple_equals(en.map(->x[x*2]), [0,2,4,6,8,10,12,14,16,18]), 'map');
+//  
+//  
+//}
+
+invalidate array;
+
