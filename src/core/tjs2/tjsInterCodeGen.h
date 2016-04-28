@@ -427,6 +427,8 @@ public:
 	void InitLocalVariable(const tjs_char *name, tTJSExprNode *node);
 	void InitLocalFunction(const tjs_char *name, tjs_int data);
 
+	tjs_char *tTJSInterCodeContext::GetTemporaryVariableName(void);
+
 	void CreateExprCode(tTJSExprNode *node);
 
 	void EnterDoWhileCode(void);

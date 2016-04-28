@@ -1,0 +1,68 @@
+(new TestNegativeCond()).run();
+
+class TestNegativeCond extends Test {
+  
+  var name = 'NEGATIVE CONDITIONS';
+  var tests = [
+    'test_until_1',
+    'test_until_2',
+    'test_until_statement',
+    'test_until_continue',
+    'test_until_break'
+    //'test_unless_1',
+    //'test_unless_2',
+    //'test_unless_statement',
+  ];
+  
+  function test_until_1() {
+    var a = 0;
+    until (10 < a) {
+      a += 1;
+    }
+    assert_equal(a, 11, 'until 1');
+  }
+  
+  function test_until_2() {
+    var a = 0;
+    var d = %[ a : 0 ];
+    var f = function { return a++; } incontextof d;
+    until (10 < f()) {
+      a += 1;
+    }
+    assert_equal(a, 11, 'until 2');
+  }
+  
+  function test_until_statement() {
+    var a = 0;
+    var b = void;
+    until (10 < a++) var b = a;
+    assert_equal(a, 12, 'until statement 1');
+    assert_equal(b, void, 'until statement 2');
+    var c = 0;
+    var d = void;
+    until (10 < c++) d = c;
+    assert_equal(c, 12, 'until statement 3');
+    assert_equal(d, 11, 'until statement 4');
+  }
+  
+  function test_until_continue() {
+    var a = 0;
+    var b = 0;
+    until (10 < a++) {
+      if (a % 2 === 0) continue;
+      b += 1;
+    }
+    assert_equal(b, 6, 'until continue');
+  }
+  
+  function test_until_break() {
+    var a = 0;
+    var b = 0;
+    until (10 < a++) {
+      b += 1;
+      if (a % 5 === 0) break;
+    }
+    assert_equal(b, 5, 'until break');
+  }
+  
+}

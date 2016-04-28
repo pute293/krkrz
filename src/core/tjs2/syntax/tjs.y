@@ -151,8 +151,11 @@ int __yyerror(char * msg, void *pm);
 	T_INCONTEXTOF			"incontextof"
 	T_FOR					"for"
 	T_WHILE					"while"
+	T_UNTIL					"until"
 	T_DO					"do"
+	T_LOOP					"loop"
 	T_IF					"if"
+	T_UNLESS				"unless"
 	T_VAR					"var"
 	T_CONST					"const"
 	T_ENUM					"enum"
@@ -245,10 +248,13 @@ statement
 	: ";"
 	| expr ";"								{ cc->CreateExprCode($1); }
 	| if
+	| unless
 	| if_else
 	| while
+	| until
 	| do_while
 	| for
+	| loop
 	| "break" ";"							{ cc->DoBreak(); }
 	| "continue" ";"						{ cc->DoContinue(); }
 	| "debugger" ";"						{ cc->DoDebugger(); }
@@ -285,7 +291,21 @@ while
 	  block_or_statement					{ cc->ExitForCode(); }
 ;
 
-/* a do-while loop
+/* # a until loop
+ * ## syntax
+ *     until (cond_expr) block_or_statement
+ * ## semantics
+ * syntactic sugar of code:
+ *     for ( ; !cond_expr; ) block_or_statement
+ */
+until
+	: "until"								{ cc->EnterForCode(); }
+	  "(" expr ")"							{ cc->CreateForExprCode(cc->MakeNP1(T_EXCRAMATION, $4));
+											  cc->SetForThirdExprCode(NULL); }
+	  block_or_statement					{ cc->ExitForCode(); }
+;
+
+/* # a do-while loop
  * ## syntax
  *     do block_or_statement while (cond_expr) ;
  * ## semantics
@@ -312,6 +332,20 @@ do_while
 if
 	: "if" "("								{ cc->EnterIfCode(); }
 	  expr									{ cc->CreateIfExprCode($4); }
+	  ")" block_or_statement				{ cc->ExitIfCode(); }
+;
+
+/* # an unless statement
+ * ## syntax
+ *     unless (cond_expr) block_or_statement
+ * ## semantics
+ * syntactic sugar of code:
+ *     if (!cond_expr) block_or_statement
+ * NB. unless-else is NOT allowed (use if-else instead)
+ */
+unless
+	: "unless" "("							{ cc->EnterIfCode(); }
+	  expr									{ cc->CreateIfExprCode(cc->MakeNP1(T_EXCRAMATION, $4)); }
 	  ")" block_or_statement				{ cc->ExitIfCode(); }
 ;
 
@@ -362,6 +396,44 @@ for_second_clause
 for_third_clause
 	: /* empty */							{ cc->SetForThirdExprCode(NULL); }
 	| expr									{ cc->SetForThirdExprCode($1); }
+;
+
+/* # a while loop
+ * ## syntax
+ *     loop { ... }
+ *     loop (expr) { ... }
+ * ## semantics
+ * syntactic sugar of code:
+ *     for (;;) { ... }
+ *     for (var $1 = (int)expr; 0 < $1; --$1) { ... }
+ */
+loop
+	: loop_init block							{ cc->ExitForCode(); }
+	| loop_init	expr							{ tjs_char *temp = cc->GetTemporaryVariableName();
+												  { // var $1 = (int)expr
+												    cc->InitLocalVariable(temp, cc->MakeNP1(T_INT, $2));
+												  }
+												  { // 0 < $1
+												    auto zero = cc->MakeNP0(T_CONSTVAL);
+												    zero->SetValue(tTJSVariant(tTVInteger(0)));
+												    auto rhs = cc->MakeNP0(T_SYMBOL);
+												    rhs->SetValue(tTJSVariant(temp));
+												    cc->CreateForExprCode(cc->MakeNP2(T_LT, zero, rhs));
+												  }
+												  { // --$1
+												    auto t1 = cc->MakeNP0(T_SYMBOL);
+												    t1->SetValue(tTJSVariant(temp));
+												    cc->SetForThirdExprCode(cc->MakeNP1(T_DECREMENT, t1));
+												  }
+												  delete[] temp;
+												}
+	 block										{ cc->ExitForCode(); }
+;
+
+loop_init
+	: "loop"									{ cc->EnterForCode();
+												  cc->CreateForExprCode(NULL);
+												  cc->SetForThirdExprCode(NULL); }
 ;
 
 /* variable definition */

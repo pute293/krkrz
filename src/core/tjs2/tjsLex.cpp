@@ -989,6 +989,7 @@ static void TJSInitReservedWordsHashTable()
 	TJS_REG_RES_WORD("finally", T_FINALLY);
 	TJS_REG_RES_WORD("false", T_FALSE);
 	TJS_REG_RES_WORD("for", T_FOR);
+	TJS_REG_RES_WORD("loop", T_LOOP);
 	TJS_REG_RES_WORD("global", T_GLOBAL);
 	TJS_REG_RES_WORD("getter", T_GETTER);
 	TJS_REG_RES_WORD("goto", T_GOTO);
@@ -1000,6 +1001,7 @@ static void TJSInitReservedWordsHashTable()
 	TJS_REG_RES_WORD("int", T_INT);
 	TJS_REG_RES_WORD("in", T_IN);
 	TJS_REG_RES_WORD("if", T_IF);
+	TJS_REG_RES_WORD("unless", T_UNLESS);
 	TJS_REG_RES_WORD("null", T_NULL);
 	TJS_REG_RES_WORD("new", T_NEW);
 	TJS_REG_RES_WORD("octet", T_OCTET);
@@ -1023,6 +1025,7 @@ static void TJSInitReservedWordsHashTable()
 	TJS_REG_RES_WORD("void", T_VOID);
 	TJS_REG_RES_WORD("var", T_VAR);
 	TJS_REG_RES_WORD("while", T_WHILE);
+	TJS_REG_RES_WORD("until", T_UNTIL);
 #ifndef TJS_NaN_and_Infinity_ARE_NOT_RESERVED_WORD
 	TJS_REG_RES_WORD("NaN", T_NAN);
 	TJS_REG_RES_WORD("Infinity", T_INFINITY);

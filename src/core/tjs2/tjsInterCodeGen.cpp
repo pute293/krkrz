@@ -2704,6 +2704,32 @@ void tTJSInterCodeContext::AddLocalVariable(const tjs_char *name, tjs_int init)
 	}
 }
 //---------------------------------------------------------------------------
+tjs_char *tTJSInterCodeContext::GetTemporaryVariableName(void)
+{
+		// returns the variable name which is not defined in this Namespace
+		// NB this method only returns a variable name, NOT create it
+		
+		size_t len = 16;
+		tjs_char *name;
+		
+		while (true) {
+			name = new tjs_char[len];
+			std::memset(name, 0, sizeof(tjs_char) * len);
+			
+			size_t i = 0;
+			while (i < len) {
+				name[i++] = 1;
+				if (Namespace.Find(name) == -1) {
+					return name;
+				}
+			}
+			
+			// all searched names were already defined
+			len *= 2;
+			delete[] name;
+		}
+}
+//---------------------------------------------------------------------------
 void tTJSInterCodeContext::InitLocalVariable(const tjs_char *name, tTJSExprNode *node)
 {
 	// create a local variable named "name", with inial value of the

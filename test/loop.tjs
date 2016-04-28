@@ -1,0 +1,77 @@
+(new TestLoop()).run();
+
+class TestLoop extends Test {
+  
+  var name = 'LOOP';
+  var tests = [
+    'test_loop_infinite',
+    'test_loop_integer',
+    'test_loop_real',
+    'test_loop_expr'
+  ];
+  
+  function test_loop_infinite {
+    var i = 0;
+    loop {
+      ++i;
+      if (i === 10000) break;
+    }
+    assert_equal(i, 10000);
+  }
+  
+  function test_loop_integer {
+    var i = 0, j = 0, k = 0;
+    loop(10) { ++i; }
+    assert_equal(i, 10, 'positive integer');
+    loop(0) { ++j; }
+    assert_equal(j, 0, 'literal zero');
+    loop(+0) { ++j; }
+    assert_equal(j, 0, 'literal +zero');
+    loop(-0) { ++j; }
+    assert_equal(j, 0, 'literal -zero');
+    loop(-10) { ++j; }
+    assert_equal(j, 0, 'negative integer');
+  }
+  
+  function test_loop_real {
+    // loop (REAL) { }
+    // => loop ((int)REAL) { }
+    var i = 0, j = 0, k = 0;
+    loop(10.9) { ++i; }
+    assert_equal(i, 10, 'positive real number');
+    loop(0.0) { ++j; }
+    assert_equal(j, 0, 'literal zero');
+    loop(+0.0) { ++j; }
+    assert_equal(j, 0, 'literal +zero');
+    loop(-0.0) { ++j; }
+    assert_equal(j, 0, 'literal -zero');
+    loop(-10.9) { ++j; }
+    assert_equal(j, 0, 'negative real number');
+  }
+  
+  function test_loop_expr {
+    // loop (EXPR) { }
+    // => { var $1 = (int)EXPR; loop ($1) { }
+    var i = 0, j = 0, k = 0, l = void, m = void;
+    var x = 10.9, y = 0.0, z = -10.9, w = [10];
+    
+    loop(x) { ++i; }
+    assert_equal(i, 10, 'positive real number');
+    loop(y) { ++j; }
+    assert_equal(j, 0, 'literal zero');
+    loop(z) { ++j; }
+    assert_equal(j, 0, 'negative real number');
+    loop 10 { l = 0; var m = 1; ++k; }
+    assert_equal(k, 10,   'without paren 1');
+    assert_equal(l, 0,    'without paren 2');
+    assert_equal(m, void, 'without paren 3');
+    
+    var ctx = %[a:0, b:x];
+    (->{ loop(b) { ++a; } } incontextof ctx)();
+    assert_equal(ctx.a, 10, 'context');
+    assert_throw(-> { loop(w) { } } incontextof %[w:w], 'object array');
+    assert_throw(-> { loop([10]) { } } incontextof %[w:w], 'object literal array');
+  }
+  
+}
+

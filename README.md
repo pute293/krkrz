@@ -10,6 +10,14 @@
   - `(__class_of__(OBJ)).METHOD incontextof OBJ` にした方がいいかも？
 - その他こまごま
   - while, do-while のスコープが変なのを修正（krkrz/krkrz の issue #226 を参照）
+  - loop 文
+    - `loop (expr) { }` で expr 回ループする
+    - `loop { }` で無限ループ
+  - until 文
+    - `until (cond) { }` は `while (!cond) { }` の構文糖
+  - unless
+    - `unless (cond) { }` は `if (!cond) { }` の構文糖
+    - unless-else 文はなし
 
 # example
     var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

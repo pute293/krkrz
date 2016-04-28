@@ -4,3 +4,5 @@ Scripts.execStorage("array_functions.tjs");
 Scripts.execStorage("arrow.tjs");
 //Scripts.execStorage("forin.tjs");
 Scripts.execStorage("dict_shortcut.tjs");
+Scripts.execStorage("loop.tjs");
+Scripts.execStorage("negative_cond.tjs");
