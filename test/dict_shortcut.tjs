@@ -1,0 +1,74 @@
+(new TestDictShortcut()).run();
+
+class TestDictShortcut extends Test {
+  
+  var name = 'DICTIONARY SHORTCUT';
+  var tests = [
+    'test_ready',
+    'test_main'
+  ];
+  
+  var obj;
+  var dict0;
+  var dict1;
+  
+  function setup {
+    obj = [2, 3, 4];
+    dict0 = %[ 'x' => 1, 'y' => obj ];
+    dict1 = %[ 'x' => 5, 'z' => 6, 'w' => 7 ];
+  }
+  
+  function test_ready {
+    (Dictionary.assign incontextof dict0)(dict1, false);
+    with (dict0) {
+      assert_equal(.x, 5,   '1');
+      assert_equal(.y, obj, '2');
+      assert_equal(.z, 6,   '3');
+      assert_equal(.w, 7,   '4');
+    }
+    
+    (Dictionary.assign incontextof dict0)(dict1, true);
+    with (dict0) {
+      assert_equal(.x, 5,    '5');
+      assert_equal(.y, void, '6');
+      assert_equal(.z, 6,    '7');
+      assert_equal(.w, 7,    '8');
+    }
+    
+    (Dictionary.assign incontextof dict0)(dict1);
+    with (dict0) {
+      assert_equal(.x, 5,    '9');
+      assert_equal(.y, void, '10');
+      assert_equal(.z, 6,    '11');
+      assert_equal(.w, 7,    '12');
+    }
+  }
+  
+  function test_main {
+    dict0->assign(dict1, false);
+    with (dict0) {
+      assert_equal(.x, 5,   '1');
+      assert_equal(.y, obj, '2');
+      assert_equal(.z, 6,   '3');
+      assert_equal(.w, 7,   '4');
+    }
+    
+    dict0->assign(dict1, true);
+    with (dict0) {
+      assert_equal(.x, 5,    '5');
+      assert_equal(.y, void, '6');
+      assert_equal(.z, 6,    '7');
+      assert_equal(.w, 7,    '8');
+    }
+    
+    dict0->assign(dict1);
+    with (dict0) {
+      assert_equal(.x, 5,    '9');
+      assert_equal(.y, void, '10');
+      assert_equal(.z, 6,    '11');
+      assert_equal(.w, 7,    '12');
+    }
+  }
+  
+}
+
