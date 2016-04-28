@@ -1,3 +1,37 @@
+# TJS 拡張
+- 組み込みクラスへのネイティブメソッドの追加（特に高階関数）
+- 無名関数式の省略表現（いわゆる「ラムダ式」）
+- その他こまごま
+  - while, do-while のスコープが変なのを修正（krkrz/krkrz の issue #226 を参照）
+
+# example
+    var array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    
+    // shallow copy of original one
+    var new_array = array.clone();
+    
+    // native 'each' method and lambda expression
+    array.each(-> item [ System.inform(item) ]);
+    
+    var twiced_array = array.map(->x[x*2]);
+    // => [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+    
+    g = -> (ary*) [ ary.reduce(-> (acc, cur) [acc + cur]) ];
+    var f = -> (x, *) [ x * g(*) ];
+    f(10, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    // => 450
+
+# TODO
+- 「列挙可能なオブジェクト」
+  - yield
+  - native Enumerable class
+    - python, ruby, javascript 風のどれか、あるいは混ぜたもの
+- ローカル変数を捕捉するクロージャ
+
+---
+以下、krkrz のライセンス表記
+
+<pre>
 Copyright (c), W.Dee and contributors All rights reserved.
 Contributors
  Go Watanabe, Kenjo, Kiyobee, Kouhei Yanagita, mey, MIK, Takenori Imoto, yun
@@ -862,3 +896,4 @@ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ------------------------------------------------------------------------
+</pre>
