@@ -185,7 +185,7 @@ public:
 
 private:
 
-	enum tNestType { ntBlock, ntWhile, ntDoWhile, ntFor,
+	enum tNestType { ntBlock, ntDoWhile, ntFor,
 		ntSwitch, ntIf, ntElse, ntTry, ntCatch, ntWith };
 
 	struct tNestData
@@ -429,9 +429,9 @@ public:
 
 	void CreateExprCode(tTJSExprNode *node);
 
-	void EnterWhileCode(bool do_while);
-	void CreateWhileExprCode(tTJSExprNode *node, bool do_while);
-	void ExitWhileCode(bool do_while);
+	void EnterDoWhileCode(void);
+	void CreateDoWhileExprCode(tTJSExprNode *node);
+	void ExitDoWhileCode(void);
 
 	void EnterIfCode();
 	void CreateIfExprCode(tTJSExprNode *node);

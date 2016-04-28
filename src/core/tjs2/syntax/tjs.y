@@ -271,20 +271,41 @@ block
 	  "}"									{ cc->ExitBlock(); }
 ;
 
-/* a while loop */
+/* # a while loop
+ * ## syntax
+ *     while (cond_expr) block_or_statement
+ * ## semantics
+ * syntactic sugar of code:
+ *     for ( ; cond_expr; ) block_or_statement
+ */
 while
-	: "while"								{ cc->EnterWhileCode(false); }
-	  "(" expr ")"							{ cc->CreateWhileExprCode($4, false); }
-	  block_or_statement					{ cc->ExitWhileCode(false); }
+	: "while"								{ cc->EnterForCode(); }
+	  "(" expr ")"							{ cc->CreateForExprCode($4);
+											  cc->SetForThirdExprCode(NULL); }
+	  block_or_statement					{ cc->ExitForCode(); }
 ;
 
-/* a do-while loop */
+/* a do-while loop
+ * ## syntax
+ *     do block_or_statement while (cond_expr) ;
+ * ## semantics
+ * semantics of do-while is difference from semantics of "for" 
+ * because do-while is syntactic sugar of code:
+ *     block_or_statement
+ *     for( ; cond_expr ; ) block_or_statement
+ * NOT equivalent to
+ *     for ( ; ; ) {
+ *       block_or_statement
+ *       if (!cond_expr) break;
+ *     }
+ * since "continue" must be jump to cond_expr, not second clause of for-block
+ */
 do_while
-	: "do"									{ cc->EnterWhileCode(true); }
-	  block_or_statement
+	: "do"									{ cc->EnterDoWhileCode(); cc->EnterBlock(); }
+	  block_or_statement					{ cc->ExitBlock(); }
 	  "while"
-	  "(" expr ")"							{ cc->CreateWhileExprCode($6, true); }
-	  ";"									{ cc->ExitWhileCode(true); }
+	  "(" expr ")"							{ cc->CreateDoWhileExprCode($7); }
+	  ";"									{ cc->ExitDoWhileCode(); }
 ;
 
 /* an if statement */
@@ -300,9 +321,23 @@ if_else
 	  block_or_statement					{ cc->ExitElseCode(); }
 ;
 
-/* a for loop */
+/* # a for loop
+ * ## syntax
+ *     for ( init_expr ; cond_expr ; after_expr ) block_or_statement
+ * ## semantics
+ * this is primary loop code. in pseudocode:
+ *     {  // install a new block for an initializing expression
+ *        init_expr ;
+ *     LOOP:
+ *        if (!cond_expr) goto EXIT ;
+ *        block_or_statement
+ *        after_expr ;
+ *        goto LOOP ;
+ *     EXIT:
+ *     }
+ */
 for
-	: "for" "("
+	: "for" "("								{ cc->EnterForCode(); }
 	  for_first_clause ";"
 	  for_second_clause ";"
 	  for_third_clause ")"
@@ -312,11 +347,9 @@ for
 
 /* the first clause of a for statement */
 for_first_clause
-	: /* empty */							{ cc->EnterForCode(); }
-	|										{ cc->EnterForCode(); }
-	  variable_def_inner
-	| expr									{ cc->EnterForCode();
-											  cc->CreateExprCode($1); }
+	: /* empty */
+	| variable_def_inner
+	| expr									{ cc->CreateExprCode($1); }
 ;
 
 /* the second clause of a for statement */

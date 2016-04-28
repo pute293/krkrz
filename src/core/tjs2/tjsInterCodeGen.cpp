@@ -2738,24 +2738,20 @@ void tTJSInterCodeContext::CreateExprCode(tTJSExprNode *node)
 	ClearFrame(fr);
 }
 //---------------------------------------------------------------------------
-void tTJSInterCodeContext::EnterWhileCode(bool do_while)
+void tTJSInterCodeContext::EnterDoWhileCode(void)
 {
-	// enter to "while"
-	// ( do_while = true indicates do-while syntax )
+	// enter to "do-while"
 	NestVector.push_back(tNestData());
-	NestVector.back().Type = do_while?ntDoWhile:ntWhile;
+	NestVector.back().Type = ntDoWhile;
 	NestVector.back().LoopStartIP = CodeAreaSize;
 }
 //---------------------------------------------------------------------------
-void tTJSInterCodeContext::CreateWhileExprCode(tTJSExprNode *node, bool do_while)
+void tTJSInterCodeContext::CreateDoWhileExprCode(tTJSExprNode *node)
 {
 	// process the condition expression "node"
-
-	if(do_while)
-	{
-		DoContinuePatch(NestVector.back());
-	}
-
+	
+	DoContinuePatch(NestVector.back());
+	
 	tjs_int fr = FrameBase;
 	tjs_int resaddr = GenNodeCode(fr, node, TJS_RT_NEEDED|TJS_RT_CFLAG, 0, tSubParam());
 	bool inv = false;
@@ -2770,23 +2766,13 @@ void tTJSInterCodeContext::CreateWhileExprCode(tTJSExprNode *node, bool do_while
 	}
 	ClearFrame(fr);
 
-	if(!do_while)
-	{
-		NestVector.back().ExitPatchVector.push_back(CodeAreaSize);
-		AddJumpList();
-		PutCode(inv?VM_JF:VM_JNF, NODE_POS);
-		PutCode(0, NODE_POS);
-	}
-	else
-	{
-		tjs_int jmp_ip = CodeAreaSize;
-		AddJumpList();
-		PutCode(inv?VM_JNF:VM_JF, NODE_POS);
-		PutCode(NestVector.back().LoopStartIP - jmp_ip, NODE_POS);
-	}
+	tjs_int jmp_ip = CodeAreaSize;
+	AddJumpList();
+	PutCode(inv?VM_JNF:VM_JF, NODE_POS);
+	PutCode(NestVector.back().LoopStartIP - jmp_ip, NODE_POS);
 }
 //---------------------------------------------------------------------------
-void tTJSInterCodeContext::ExitWhileCode(bool do_while)
+void tTJSInterCodeContext::ExitDoWhileCode(void)
 {
 	// exit from "while"
 	if(NestVector.size() == 0)
@@ -2794,30 +2780,13 @@ void tTJSInterCodeContext::ExitWhileCode(bool do_while)
 		_yyerror(TJSSyntaxError, Block);
 		return;
 	}
-	if(do_while)
+	
+	if(NestVector.back().Type != ntDoWhile)
 	{
-		if(NestVector.back().Type != ntDoWhile)
-		{
-			_yyerror(TJSSyntaxError, Block);
-			return;
-		}
+		_yyerror(TJSSyntaxError, Block);
+		return;
 	}
-	else
-	{
-		if(NestVector.back().Type != ntWhile)
-		{
-			_yyerror(TJSSyntaxError, Block);
-			return;
-		}
-	}
-
-	if(!do_while)
-	{
-		tjs_int jmp_ip = CodeAreaSize;
-		AddJumpList();
-		PutCode(VM_JMP, LEX_POS);
-		PutCode(NestVector.back().LoopStartIP - jmp_ip, LEX_POS);
-	}
+	
 	DoNestTopExitPatch();
 	NestVector.pop_back();
 }
@@ -2907,9 +2876,7 @@ void tTJSInterCodeContext::ExitElseCode()
 void tTJSInterCodeContext::EnterForCode()
 {
 	// enter to "for".
-	// ( varcreate = true, indicates that the variable is to be created in the
-	//	first clause )
-
+	
 	NestVector.push_back(tNestData());
 	NestVector.back().Type = ntFor;
 	EnterBlock();
@@ -3222,7 +3189,7 @@ void tTJSInterCodeContext::DoBreak(void)
 	{
 		tNestData &data = NestVector[i];
 		if(data.Type == ntSwitch ||
-			data.Type == ntWhile || data.Type == ntDoWhile ||
+			data.Type == ntDoWhile ||
 			data.Type == ntFor)
 		{
 			// "break" can apply on this syntax
@@ -3269,17 +3236,7 @@ void tTJSInterCodeContext::DoContinue(void)
 	for(; i>=0; i--)
 	{
 		tNestData &data = NestVector[i];
-		if(data.Type == ntWhile)
-		{
-			// for "while" loop
-			ClearLocalVariable(vc, pvc); // clear local variables
-			tjs_int jmpstart = CodeAreaSize;
-			AddJumpList();
-			PutCode(VM_JMP, LEX_POS);
-			PutCode(data.LoopStartIP - jmpstart, LEX_POS);
-			return;
-		}
-		else if(data.Type == ntDoWhile || data.Type == ntFor)
+		if(data.Type == ntDoWhile || data.Type == ntFor)
 		{
 			// "do-while" or "for" loop needs forward jump
 			ClearLocalVariable(vc, pvc); // clears local variables
