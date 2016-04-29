@@ -23,10 +23,10 @@ class TestArrayFunctions extends Test {
     array.clone();
     var a = array.clone();
     assert_not_equal(a, array, 'clone returns same object');
-    assert_array_equal(a, array, 'clone failed');
+    assert_equal_struct(a, array, 'clone failed');
     a[0] = 100;
     assert_equal(array[0], 10, 'clone deeply???');
-    assert_array_equal(array, array0, 'clone breaks an array');
+    assert_equal_struct(array, array0, 'clone breaks an array');
   }
   
   function test_each {
@@ -41,7 +41,7 @@ class TestArrayFunctions extends Test {
     assert_equal(n.n, 145, '4');
     assert_equal(r, void, '5');
     assert_throw(function(){array.each(null);}, 'an exception was not thrown');
-    assert_array_equal(array, array0, 'each breaks an array');
+    assert_equal_struct(array, array0, 'each breaks an array');
   }
   
   function test_map {
@@ -53,9 +53,9 @@ class TestArrayFunctions extends Test {
       i += 1;
       return item * 2;
     } incontextof n, 'a');
-    assert_array_equal(array1, [20, 22, 24, 26, 28, 30, 32, 34, 36, 38], '4');
+    assert_equal_struct(array1, [20, 22, 24, 26, 28, 30, 32, 34, 36, 38], '4');
     assert_throw(function(){array.map(null);}, 'an exception was not thrown');
-    assert_array_equal(array, array0, 'map breaks an array');
+    assert_equal_struct(array, array0, 'map breaks an array');
   }
   
   function test_filter {
@@ -67,9 +67,9 @@ class TestArrayFunctions extends Test {
       i += 1;
       return item % 3 === 0;
     } incontextof n, 'a');
-    assert_array_equal(array1, [12, 15, 18], '4');
+    assert_equal_struct(array1, [12, 15, 18], '4');
     assert_throw(function(){array.filter(null);}, 'an exception was not thrown');
-    assert_array_equal(array, array0, 'filter breaks an array');
+    assert_equal_struct(array, array0, 'filter breaks an array');
   }
   
   function test_reduce {
@@ -83,12 +83,12 @@ class TestArrayFunctions extends Test {
     } incontextof n);
     assert_equal(r, 145, '4');
     assert_throw(function(){array.reduce(null);}, 'an exception was not thrown');
-    assert_array_equal(array, array0, 'reduce breaks an array 1');
+    assert_equal_struct(array, array0, 'reduce breaks an array 1');
     
     assert_equal(array.reduce(function(acc, item){return acc + item;}, 10), 155, 'init value');
     assert_equal([].reduce(function(acc, item){return acc + item;}), void, 'reduce empty 1');
     assert_equal([].reduce(function(acc, item){return acc + item;}, 1), 1, 'reduce empty 2');
     
-    assert_array_equal(array, array0, 'reduce breaks an array 2');
+    assert_equal_struct(array, array0, 'reduce breaks an array 2');
   }
 }

@@ -36,9 +36,8 @@ class Test {
         a1.assign(obj1);
         a2.assign(obj2);
         if (a1.count != a2.count) return false;
-        var key1 = a1.filter(-> (x, i) { System.inform(x); return i % 2 === 0; });
-        var key2 = a2.filter(-> (x, i) { System.inform(x); return i % 2 === 0; });
-        for (var i = 0; i < key1.count; ++i) { System.inform(key1[i]); }
+        var key1 = a1.filter(-> (x, i) [ i % 2 == 0 ]);
+        var key2 = a2.filter(-> (x, i) [ i % 2 == 0 ]);
         key1.sort(); key2.sort();
         if (!equal_struct(key1, key2)) return false;
         for (var i = 0, e = key1.count; i < e; ++i) {
@@ -127,13 +126,20 @@ class Test {
       var test = tests[i];
       try {
         this[test]();
-        result.add(@'\033[32m  ${test}: success\033[0m');
+        result.add([true, @'\033[32m  ${test}: success\033[0m']);
       } catch (e) {
-        result.add(@'\033[31m  ${test}: ${e.message}\033[0m');
+        result.add([false, @'\033[31m  ${test}: ${e.message}\033[0m']);
       }
     }
     teardown();
-    for (var i = 0; i < result.count; ++i) puts(result[i]);
+    for (var i = 0; i < result.count; ++i) puts(result[i][1]);
+    var ok = result.filter(-> x [ x[0] ]).count;
+    var fail = result.filter(-> x [ !x[0] ]).count;
+    if (fail === 0) {
+      puts('\033[32m  SUCCESS ALL TESTS\033[0m');
+    } else {
+      puts(@'\033[31m  FAIL ${fail} TESTS\033[0m');
+    }
     puts(@'$$$ TEST ${name} ==============================');
   }
 }

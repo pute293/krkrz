@@ -6,3 +6,4 @@ Scripts.execStorage("arrow.tjs");
 Scripts.execStorage("dict_shortcut.tjs");
 Scripts.execStorage("loop.tjs");
 Scripts.execStorage("negative_cond.tjs");
+Scripts.execStorage("iterator.tjs");
