@@ -21,6 +21,96 @@ namespace TJS
 //---------------------------------------------------------------------------
 static tjs_int32 ClassID_Dictionary;
 //---------------------------------------------------------------------------
+namespace {
+// enumerate members of Dictionary
+// from ScriptsEx
+class DictMemberGetCaller : public tTJSDispatch
+{
+public:
+	enum struct EnumMode {
+	    Key, Value
+	};
+	
+	DictMemberGetCaller(iTJSDispatch2 *array, EnumMode mode) : array(array), mode(mode) {};
+	virtual tjs_error TJS_INTF_METHOD FuncCall( // function invocation
+												tjs_uint32 flag,			// calling flag
+												const tjs_char * membername,// member name ( NULL for a default member )
+												tjs_uint32 *hint,			// hint for the member name (in/out)
+												tTJSVariant *result,		// result
+												tjs_int numparams,			// number of parameters
+												tTJSVariant **param,		// parameters
+												iTJSDispatch2 *objthis		// object as "this"
+												) {
+		if (numparams > 1) {
+			tTVInteger flag = param[1]->AsInteger();
+			static tjs_uint addHint = NULL;
+			if (!(flag & TJS_HIDDENMEMBER)) {
+				switch (mode) {
+				case EnumMode::Key:
+					array->FuncCall(0, TJS_W("add"), &addHint, 0, 1, &param[0], array);
+					break;
+				case EnumMode::Value:
+					array->FuncCall(0, TJS_W("add"), &addHint, 0, 1, &param[2], array);
+					break;
+				}
+				
+			}
+		}
+		if (result) {
+			*result = true;
+		}
+		return TJS_S_OK;
+	}
+protected:
+	iTJSDispatch2 *array;
+	EnumMode mode;
+};
+//----------------------------------------------------------------------
+// enumerate (key, value) pairs of Dictionary
+// from ScriptsEx
+class DictIterateCaller : public tTJSDispatch
+{
+public:
+	iTJSDispatch2 *func;
+	iTJSDispatch2 *functhis;
+	tTJSVariant **paramList;
+	tjs_int paramCount;
+	
+	DictIterateCaller(iTJSDispatch2 *func,
+					  iTJSDispatch2 *functhis,
+					  tTJSVariant **_paramList,
+					  tjs_int _paramCount)
+		 : func(func), functhis(functhis)
+		   , paramList(_paramList)
+		   , paramCount(_paramCount) {
+		   }
+
+	virtual tjs_error TJS_INTF_METHOD FuncCall( // function invocation
+												tjs_uint32 flag,			// calling flag
+												const tjs_char * membername,// member name ( NULL for a default member )
+												tjs_uint32 *hint,			// hint for the member name (in/out)
+												tTJSVariant *result,		// result
+												tjs_int numparams,			// number of parameters
+												tTJSVariant **param,		// parameters
+												iTJSDispatch2 *objthis		// object as "this"
+												) {
+		if (numparams > 1) {
+			if ((int)*param[1] != TJS_HIDDENMEMBER) {
+				paramList[0] = param[0];
+				paramList[1] = param[2];
+				(void)func->FuncCall(0, NULL, NULL, 0, paramCount, paramList, functhis);
+			}
+		}
+		if (result) {
+			*result = true;
+		}
+		return TJS_S_OK;
+	}
+};
+//----------------------------------------------------------------------
+}
+
+//---------------------------------------------------------------------------
 // tTJSDictionaryClass : tTJSDictionary class
 //---------------------------------------------------------------------------
 tjs_uint32 tTJSDictionaryClass::ClassID = (tjs_uint32)-1;
@@ -217,6 +307,75 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func.name*/clear)
 	return TJS_S_OK;
 }
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/clear)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func.name*/keys)
+{
+	TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSDictionaryNI);
+	if(!ni->IsValid()) return TJS_E_INVALIDOBJECT;
+	
+	if (result) {
+		iTJSDispatch2 *array = TJSCreateArrayObject();
+		DictMemberGetCaller *caller = new DictMemberGetCaller(array, DictMemberGetCaller::EnumMode::Key);
+		tTJSVariantClosure closure(caller);
+		objthis->EnumMembers(TJS_IGNOREPROP | TJS_ENUM_NO_VALUE, &closure, NULL);
+		caller->Release();
+		*result = tTJSVariant(array, array);
+		array->Release();
+	}
+	
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/keys)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func.name*/values)
+{
+	TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSDictionaryNI);
+	if(!ni->IsValid()) return TJS_E_INVALIDOBJECT;
+	
+	if (result) {
+		iTJSDispatch2 *array = TJSCreateArrayObject();
+		DictMemberGetCaller *caller = new DictMemberGetCaller(array, DictMemberGetCaller::EnumMode::Value);
+		tTJSVariantClosure closure(caller);
+		objthis->EnumMembers(TJS_IGNOREPROP, &closure, NULL);
+		caller->Release();
+		*result = tTJSVariant(array, array);
+		array->Release();
+	}
+	
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/values)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/*func.name*/each)
+{
+	if (numparams < 1) return TJS_E_BADPARAMCOUNT;
+	
+	tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
+	iTJSDispatch2 *fn = clo.Object;
+	iTJSDispatch2 *fn_this = clo.ObjThis;
+	if (!fn) return TJS_E_INVALIDPARAM;
+	if (!fn_this) {
+	    fn_this = objthis;
+	}
+    
+    tTJSVariant **paramList = new tTJSVariant *[numparams + 1];
+	/* paramList[0]  := key (set by DictIterateCaller)
+	 * paramList[1]  := value (set by DictIterateCaller)
+	 * paramList[..] := *args
+	 */
+	for (tjs_int i = 0; i < numparams - 1; i++)
+		paramList[i + 2] = param[i + 1];
+    
+    DictIterateCaller *caller = new DictIterateCaller(fn, fn_this, paramList, numparams + 1);
+    tTJSVariantClosure closure(caller);
+    
+	objthis->EnumMembers(TJS_IGNOREPROP, &closure, NULL);
+	caller->Release();
+	delete[] paramList;
+    
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/each)
 //----------------------------------------------------------------------
 
 	ClassID_Dictionary = TJS_NCM_CLASSID;

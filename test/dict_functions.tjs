@@ -1,0 +1,76 @@
+(new TestDictFunctions()).run();
+
+class TestDictFunctions extends Test {
+  
+  var name = 'DICTIONARY FUNCTIONS';
+  var tests = [
+    'test_keys',
+    'test_values',
+    'test_each'
+  ];
+  
+  var obj1;
+  var obj2;
+  var dict0;
+  var dict;
+  
+  function setup() {
+    obj1 = [2, 3, 4];
+    obj2 = %[ d: 7, e: 8 ];
+    dict0 = %[ a: 1, b: obj1, c: obj2 ];
+    dict  = %[ a: 1, b: obj1, c: obj2 ];
+  }
+  
+  function test_keys {
+    var a = dict->keys();
+    assert_equal(a.count, 3, '1');
+    a.sort();
+    assert_equal_struct(a, ['a', 'b', 'c'], '2');
+    assert_equal_struct(dict, dict0, 'keys() breaks an object');
+  }
+  
+  function test_values {
+    var a = dict->values();
+    assert_equal(a.count, 3, '1');
+    if (equal_struct(a, [1, obj1, obj2]) ||
+        equal_struct(a, [1, obj2, obj1]) ||
+        equal_struct(a, [obj1, 1, obj2]) ||
+        equal_struct(a, [obj1, obj2, 1]) ||
+        equal_struct(a, [obj2, 1, obj1]) ||
+        equal_struct(a, [obj2, obj1, 1])) {
+      // ok
+    } else {
+      throw new Exception('1');
+    }
+    assert_equal_struct(dict, dict0, 'values() breaks an object');
+  }
+  
+  function test_each {
+    var n = %[i: 0, keys: [], values: [], self: this];
+    var r = dict->each(function (key, value, x, y) {
+      self.assert_equal(x, 'x', @'1 (key=${key})');
+      self.assert_equal(y, void, @'2 (key=${key})');
+      keys.add(key);
+      values.add(value);
+      i += 1;
+    } incontextof n, 'x');
+    assert_equal(n.i, 3, '3');
+    assert_equal(r, void, '4');
+    n.keys.sort();
+    assert_equal_struct(n.keys, ['a', 'b', 'c'], '5');
+    if (equal_struct(n.values, [1, obj1, obj2]) ||
+        equal_struct(n.values, [1, obj2, obj1]) ||
+        equal_struct(n.values, [obj1, 1, obj2]) ||
+        equal_struct(n.values, [obj1, obj2, 1]) ||
+        equal_struct(n.values, [obj2, 1, obj1]) ||
+        equal_struct(n.values, [obj2, obj1, 1])) {
+      // ok
+    } else {
+      throw new Exception('6');
+    }
+    
+    assert_throw(function(){dict->each(null);}, 'an exception was not thrown');
+    assert_equal_struct(dict, dict0, 'each() breaks an object');
+  }
+  
+}

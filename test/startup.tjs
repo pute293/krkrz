@@ -1,6 +1,7 @@
 Scripts.execStorage("TestClass.tjs");
 Scripts.execStorage("syntax.tjs");
 Scripts.execStorage("array_functions.tjs");
+Scripts.execStorage("dict_functions.tjs");
 Scripts.execStorage("arrow.tjs");
 //Scripts.execStorage("forin.tjs");
 Scripts.execStorage("dict_shortcut.tjs");

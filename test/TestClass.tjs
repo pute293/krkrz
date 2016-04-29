@@ -45,7 +45,8 @@ class Test {
         }
         return true;
       }
-      throw new Exception('Object: Not Implemented');
+      //throw new Exception('Object: Not Implemented');
+      return false;
     case 'Octet':
       throw new Exception('Octet: Not Implemented');
     default:
