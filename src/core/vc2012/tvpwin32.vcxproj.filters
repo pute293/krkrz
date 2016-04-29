@@ -548,6 +548,9 @@
     <ClInclude Include="platforms.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\tjs2\tjsIterator.h">
+      <Filter>tjs2</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\tjs2\tjs.cpp">
@@ -981,6 +984,9 @@
     </ClCompile>
     <ClCompile Include="..\visual\IA32\detect_cpu.cpp">
       <Filter>visual\IA32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tjs2\tjsIterator.cpp">
+      <Filter>tjs2</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

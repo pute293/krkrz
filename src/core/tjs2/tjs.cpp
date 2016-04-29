@@ -30,6 +30,7 @@
 #include "tjsByteCodeLoader.h"
 #include "tjsBinarySerializer.h"
 #include "tjsRegExp.h"
+#include "tjsIterator.h"
 
 namespace TJS
 {
@@ -193,6 +194,13 @@ tTJS::tTJS()
 		dsp->Release();
 		Global->PropSet(TJS_MEMBERENSURE, TJS_W("RegExp"), NULL, &val, Global);
 #endif
+
+		// Iterator
+		dsp = new tTJSNC_Iterator();
+		val = tTJSVariant(dsp, NULL);
+		dsp->Release();
+		Global->PropSet(TJS_MEMBERENSURE, TJS_W("Iterator"), NULL, &val, Global);
+
 	}
 	catch(...)
 	{
