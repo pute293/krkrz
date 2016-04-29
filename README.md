@@ -1,6 +1,7 @@
 # TJS 拡張
 - 組み込みクラスへのネイティブメソッドの追加（特に高階関数）
-  - `each`, `map`, `filter`, `reduce`
+  - `Array.each`, `Array.map`, `Array.filter`, `Array.reduce`
+  - `Dictionary.each`, `Dictionary.keys`, `Dictionary.values`
 - 無名関数式の省略表現（いわゆる「ラムダ式」）
   - `function (x, y) { return x * y; }` を `-> (x, y) { return x * y; }` と書ける
   - 本体が式ひとつなら `return` も省略して `-> (x, y) [ x * y ]` と書ける
@@ -38,8 +39,9 @@
     
     var dict0 = %[ 'a' => 1, 'b' => [10,20,30] ];
     var dict1 = %[ 'b' => 2, 'c' => 3 ];
-    dict1->assign(dict0, true);
-    
+    dict1->assign(dict0, false);
+    var keys = dict1->keys();
+    // ['a', 'c', 'b']
 
 # TODO
 - 「列挙可能なオブジェクト」
