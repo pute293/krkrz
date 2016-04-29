@@ -15,8 +15,8 @@ class TestArrayFunctions extends Test {
   var array;
   
   function setup() {
-    array0 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    array0 = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    array  = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
   }
   
   function test_clone {
@@ -25,44 +25,70 @@ class TestArrayFunctions extends Test {
     assert_not_equal(a, array, 'clone returns same object');
     assert_array_equal(a, array, 'clone failed');
     a[0] = 100;
-    assert_equal(array[0], 0, 'clone deeply???');
+    assert_equal(array[0], 10, 'clone deeply???');
     assert_array_equal(array, array0, 'clone breaks an array');
   }
   
   function test_each {
-    var n = %[n:0,i:0,b:true];
-    array.each(function(item, idx, a){ n += item; b &= i == idx && a === "a"; i += 1; } incontextof n, "a");
-    assert_equal(n.n, 45, @'each failed ${n.n} ${n.b}');
+    var n = %[n: 0, i: 0, self: this];
+    var r = array.each(function (item, idx, x, y) {
+      self.assert_equal(idx, i, @'1 (idx=${idx})');
+      self.assert_equal(x, 'a', @'2 (idx=${idx})');
+      self.assert_equal(y, void, @'3 (idx=${idx})');
+      n += item;
+      i += 1;
+    } incontextof n, 'a');
+    assert_equal(n.n, 145, '4');
+    assert_equal(r, void, '5');
     assert_throw(function(){array.each(null);}, 'an exception was not thrown');
     assert_array_equal(array, array0, 'each breaks an array');
-    var a = array.each(function(item, idx, a){ n += item; b &= i == idx && a === "a"; i += 1; } incontextof n, "a");
   }
   
   function test_map {
-    array.map(function(item){return item * 2;});
-    var a = array.map(function(item){return item * 2;});
-    assert_array_equal(
-             array.map(function(item){return item * 2;}),
-             [0, 2, 4, 6, 8, 10, 12, 14, 16, 18],
-           "map fail");
-    assert_array_equal(array, array0, "map breaks an array");
+    var n = %[i: 0, self: this];
+    var array1 = array.map(function (item, idx, x, y) {
+      self.assert_equal(idx, i, @'1 (idx=${idx})');
+      self.assert_equal(x, 'a', @'2 (idx=${idx})');
+      self.assert_equal(y, void, @'3 (idx=${idx})');
+      i += 1;
+      return item * 2;
+    } incontextof n, 'a');
+    assert_array_equal(array1, [20, 22, 24, 26, 28, 30, 32, 34, 36, 38], '4');
+    assert_throw(function(){array.map(null);}, 'an exception was not thrown');
+    assert_array_equal(array, array0, 'map breaks an array');
   }
   
   function test_filter {
-    array.filter(function(item){return item % 2 == 0;});
-    var a = array.filter(function(item){return item % 2 == 0;});
-    assert_array_equal(array.filter(function(item){return item % 2 == 0;}), [0, 2, 4, 6, 8], "filter fail");
-    assert_array_equal(array.filter(function(item){return [];}), array, "filter fail");
-    assert_array_equal(array, array0, "filter breaks an array");
+    var n = %[i: 0, self: this];
+    var array1 = array.filter(function (item, idx, x, y) {
+      self.assert_equal(idx, i, @'1 (idx=${idx})');
+      self.assert_equal(x, 'a', @'2 (idx=${idx})');
+      self.assert_equal(y, void, @'3 (idx=${idx})');
+      i += 1;
+      return item % 3 === 0;
+    } incontextof n, 'a');
+    assert_array_equal(array1, [12, 15, 18], '4');
+    assert_throw(function(){array.filter(null);}, 'an exception was not thrown');
+    assert_array_equal(array, array0, 'filter breaks an array');
   }
   
   function test_reduce {
-    array.reduce(function(acc, item){return acc + item;});
-    var a = array.reduce(function(acc, item){return acc + item;});
-    assert_equal(array.reduce(function(acc, item){return acc + item;}), 45, 'reduce fail 1');
-    assert_equal(array.reduce(function(acc, item){return acc + item;}, 10), 55, @'reduce fail 2');
+    var n = %[i: 0, self: this];
+    var r = array.reduce(function (acc, item, idx, x, y) {
+      self.assert_equal(idx, i, @'1 (idx=${idx})');
+      self.assert_equal(x, void, @'2 (idx=${idx})');
+      self.assert_equal(y, void, @'3 (idx=${idx})');
+      i += 1;
+      return acc + item;
+    } incontextof n);
+    assert_equal(r, 145, '4');
+    assert_throw(function(){array.reduce(null);}, 'an exception was not thrown');
+    assert_array_equal(array, array0, 'reduce breaks an array 1');
+    
+    assert_equal(array.reduce(function(acc, item){return acc + item;}, 10), 155, 'init value');
     assert_equal([].reduce(function(acc, item){return acc + item;}), void, 'reduce empty 1');
     assert_equal([].reduce(function(acc, item){return acc + item;}, 1), 1, 'reduce empty 2');
-    assert_array_equal(array, array0, "reduce breaks an array");
+    
+    assert_array_equal(array, array0, 'reduce breaks an array 2');
   }
 }

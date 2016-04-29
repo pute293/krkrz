@@ -11,6 +11,49 @@ class Test {
     Debug.message(str);
   }
   
+  function equal_struct(obj1, obj2) {
+    if ((typeof obj1) !== (typeof obj2))
+      return false;
+    switch (typeof obj1) {
+    case 'void': return true;
+    case 'Integer':
+    case 'Real':
+    case 'String':
+      return obj1 === obj2;
+    case 'Object':
+      if (obj1 === null || obj2 === null) {
+        return (obj1 === null) && (obj2 === null);
+      }
+      if (obj1 instanceof 'Array' && obj2 instanceof 'Array') {
+        if (obj1.count !== obj2.count) return false;
+        for (var i = 0, e = obj1.count; i < e; ++i) {
+          if (!equal_struct(obj1[i], obj2[i])) return false;
+        }
+        return true;
+      }
+      if (obj1 instanceof 'Dictionary' && obj2 instanceof 'Dictionary') {
+        var a1 = [], a2 = [];
+        a1.assign(obj1);
+        a2.assign(obj2);
+        if (a1.count != a2.count) return false;
+        var key1 = a1.filter(-> (x, i) { System.inform(x); return i % 2 === 0; });
+        var key2 = a2.filter(-> (x, i) { System.inform(x); return i % 2 === 0; });
+        for (var i = 0; i < key1.count; ++i) { System.inform(key1[i]); }
+        key1.sort(); key2.sort();
+        if (!equal_struct(key1, key2)) return false;
+        for (var i = 0, e = key1.count; i < e; ++i) {
+          if (!equal_struct(obj1[key1[i]], obj2[key1[i]])) return false;
+        }
+        return true;
+      }
+      throw new Exception('Object: Not Implemented');
+    case 'Octet':
+      throw new Exception('Octet: Not Implemented');
+    default:
+      throw new Exception('must not happen!');
+    }
+  }
+  
   function assert_equal(v, expected, str='') {
     if (v === expected) return true;
     var ex = expected;
@@ -58,6 +101,18 @@ class Test {
       }
     }
     return true;
+  }
+  
+  function assert_equal_struct(v, expected, str='') {
+    if (equal_struct(v, expected)) return true;
+    if (v === expected) return true;
+    var ex = expected;
+    if (ex === void) ex = 'void';
+    else if (ex === null) ex = 'null';
+    if (v === void) v = 'void';
+    else if (v === null) v = 'null';
+    str = str.length ? @'${str}: ' : '';
+    throw new Exception(@'${str}${ex} is expected, but ${v}');
   }
   
   function setup() { }
