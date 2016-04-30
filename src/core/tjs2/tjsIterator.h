@@ -23,52 +23,37 @@ class tTJSNI_Iterator : public tTJSNativeInstance
 public:
 	tTJSNI_Iterator();
 	
-	// LIST -> VOID
-	tjs_error Each(	tTJSVariant *result,
-					tjs_int numparams,
-					tTJSVariant **param,
-					iTJSDispatch2 *objthis);
+	template<typename Action>
+	tjs_error Each( tTJSVariant *result,
+					iTJSDispatch2 *objthis,
+					Action action);
 	
-	// LIST -> LIST
-	tjs_error Map(	tTJSVariant *result,
-					tjs_int numparams,
-					tTJSVariant **param,
-					iTJSDispatch2 *objthis);
-	
-	// LIST -> LIST
-	tjs_error Filter(	tTJSVariant *result,
-						tjs_int numparams,
-						tTJSVariant **param,
-						iTJSDispatch2 *objthis);
-	
-	// LIST -> LIST
-	template<typename Func>
-	tjs_error Filter(	tTJSVariant *result,
-						Func pred,
-						iTJSDispatch2 *objthis);
-	
-	// LIST -> LIST
-	tjs_error Drop(	tTJSVariant *result,
-					tjs_int numparams,
-					tTJSVariant **param,
-					iTJSDispatch2 *objthis);
-	
-	// LIST -> LIST
-	tjs_error Take(	tTJSVariant *result,
-					tjs_int numparams,
-					tTJSVariant **param,
-					iTJSDispatch2 *objthis);
-	
-	/*	LIST -> ATOM
+	/*
+			dropWhile
+			takeWhile
 			reduce
 			at
 			first
 			last
-		LIST -> LIST
-			dropWhile
-			takeWhile
-		
-	 */
+			flatMap
+			cycle
+			find
+			findIndex
+			pairwise
+			slice
+			contains
+			groupBy
+			count
+			max
+			min
+			minmax
+			uniq
+			partition
+			reject
+			zip
+			
+			lazy
+	*/
 	
 private:
 };

@@ -1,24 +1,9 @@
-class B extends Iterator {
+/*class B extends Iterator {
   var i = 1;
   const MAX = 100000;
   function next { return i++; }
   function hasNext { return i < MAX; }
 }
-/*var a = new Iterator();
-while (a.hasNext()) {
-  System.inform(@'a: ${a.next()}');
-}
-var b = new B();
-while (b.hasNext()) {
-  System.inform(@'b: ${b.next()}');
-}*/
-//c.each(-> (x, idx, y, z, w) [ System.inform(@'x: ${x}; y: ${y}; z: ${z}, w: ${w}') ], 'Y', 'Z');
-
-var x = new B();
-var y = x.take(10).map(->x[x*2]);
-for (var i = 0; i < y.count; ++i) Debug.message(y[i]);
-System.exit();
-
 var ctx = %[v: 0];
 var result = [];
 loop(10) {
@@ -39,16 +24,15 @@ for (var i = 0; i < result.count; ++i) {
   Debug.message(@'${result[i]} ms');
 }
 Debug.message(@'Average: ${result.reduce(->(a,c)[a+c])/result.count} ms');
+System.exit();*/
 
-//System.exit();
-
-//Scripts.execStorage("TestClass.tjs");
-//Scripts.execStorage("syntax.tjs");
-//Scripts.execStorage("array_functions.tjs");
-//Scripts.execStorage("dict_functions.tjs");
-//Scripts.execStorage("arrow.tjs");
-////Scripts.execStorage("forin.tjs");
-//Scripts.execStorage("dict_shortcut.tjs");
-//Scripts.execStorage("loop.tjs");
-//Scripts.execStorage("negative_cond.tjs");
-//Scripts.execStorage("iterator.tjs");
+Scripts.execStorage("TestClass.tjs");
+Scripts.execStorage("syntax.tjs");
+Scripts.execStorage("array_functions.tjs");
+Scripts.execStorage("dict_functions.tjs");
+Scripts.execStorage("arrow.tjs");
+//Scripts.execStorage("forin.tjs");
+Scripts.execStorage("dict_shortcut.tjs");
+Scripts.execStorage("loop.tjs");
+Scripts.execStorage("negative_cond.tjs");
+Scripts.execStorage("iterator.tjs");
