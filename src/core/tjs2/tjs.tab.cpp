@@ -125,7 +125,7 @@ int __yyerror(char * msg, void *pm);
 
 
 /* Line 189 of yacc.c  */
-#line 128 "tjs.tab.cpp"
+#line 128 "tjs.tab.c"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -305,7 +305,7 @@ typedef union YYSTYPE
 
 
 /* Line 214 of yacc.c  */
-#line 308 "tjs.tab.cpp"
+#line 308 "tjs.tab.c"
 } YYSTYPE;
 YYLEX_PROTO_DECL
 
@@ -319,7 +319,7 @@ YYLEX_PROTO_DECL
 
 
 /* Line 264 of yacc.c  */
-#line 320 "tjs.tab.cpp"
+#line 320 "tjs.tab.c"
 
 #ifdef short
 # undef short
@@ -3972,7 +3972,7 @@ yyreduce:
 
 
 /* Line 1464 of yacc.c  */
-#line 3973 "tjs.tab.cpp"
+#line 3973 "tjs.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);

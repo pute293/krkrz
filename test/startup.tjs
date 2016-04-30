@@ -1,38 +1,17 @@
-/*class B extends Iterator {
-  var i = 1;
-  const MAX = 100000;
-  function next { return i++; }
-  function hasNext { return i < MAX; }
-}
-var ctx = %[v: 0];
-var result = [];
-loop(10) {
-  var c = new B();
-  var t0 = System.getTickCount();
-  c.each(-> x [ v = x ] incontextof ctx);
-  var t1 = System.getTickCount();
-  result.add(t1 - t0);
-}
-loop(10) {
-  var c = new B();
-  var t0 = System.getTickCount();
-  c.map(-> x [ v = x ] incontextof ctx);
-  var t1 = System.getTickCount();
-  result.add(t1 - t0);
-}
-for (var i = 0; i < result.count; ++i) {
-  Debug.message(@'${result[i]} ms');
-}
-Debug.message(@'Average: ${result.reduce(->(a,c)[a+c])/result.count} ms');
-System.exit();*/
+//Scripts.dump();
+//function p(s) {
+//  if (s === void) s = 'void';
+//  if (s === null) s = 'null';
+//  Debug.message(s);
+//}
 
 Scripts.execStorage("TestClass.tjs");
 Scripts.execStorage("syntax.tjs");
 Scripts.execStorage("array_functions.tjs");
 Scripts.execStorage("dict_functions.tjs");
 Scripts.execStorage("arrow.tjs");
-//Scripts.execStorage("forin.tjs");
 Scripts.execStorage("dict_shortcut.tjs");
 Scripts.execStorage("loop.tjs");
 Scripts.execStorage("negative_cond.tjs");
 Scripts.execStorage("iterator.tjs");
+//Scripts.execStorage("forin.tjs");

@@ -196,10 +196,28 @@ tTJS::tTJS()
 #endif
 
 		// Iterator
-		dsp = new tTJSNC_Iterator();
-		val = tTJSVariant(dsp, NULL);
-		dsp->Release();
-		Global->PropSet(TJS_MEMBERENSURE, TJS_W("Iterator"), NULL, &val, Global);
+		{
+			tTJSNC_Iterator *it;
+			
+			dsp = it = new tTJSNC_Iterator();
+			val = tTJSVariant(dsp, NULL);
+			dsp->Release();
+			Global->PropSet(TJS_MEMBERENSURE, TJS_W("Iterator"), NULL, &val, Global);
+			
+			// ArrayIterator
+			dsp = new tTJSNC_ArrayIterator();
+			((tTJSNativeClass*)dsp)->SetSuper(it);
+			val = tTJSVariant(dsp, NULL);
+			dsp->Release();
+			Global->PropSet(TJS_MEMBERENSURE, TJS_W("ArrayIterator"), NULL, &val, Global);
+			
+			// DictionaryIterator
+			dsp = new tTJSNC_DictionaryIterator();
+			((tTJSNativeClass*)dsp)->SetSuper(it);
+			val = tTJSVariant(dsp, NULL);
+			dsp->Release();
+			Global->PropSet(TJS_MEMBERENSURE, TJS_W("DictionaryIterator"), NULL, &val, Global);
+		}
 
 	}
 	catch(...)

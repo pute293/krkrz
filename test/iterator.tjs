@@ -4,63 +4,92 @@ class TestIterator extends Test {
   
   var name = 'ITERATOR';
   var tests = [
+    'test_inherit',
     'test_1',
-    'test_each',
-    'test_map',
-    'test_filter',
-    'test_drop',
-    'test_take',
-    'test_all',
-    'test_any',
-    'test_none'
+    'test_array_each',
+    'test_array_map',
+    'test_array_filter',
+    'test_array_drop',
+    'test_array_take',
+    'test_array_all',
+    'test_array_any',
+    'test_array_none',
+    'test_dict_each',
+    'test_dict_map',
+    'test_dict_filter',
+    'test_dict_drop',
+    'test_dict_take',
+    'test_dict_all',
+    'test_dict_any',
+    'test_dict_none'
     //'test_forin_iterator',
     //'test_forin_array',
     //'test_forin_dict'
   ];
   var ctx;
   var a;
+  var d;
+  var emp_ary;
+  var emp_dic;
   
-  class A extends Iterator {
-    var i = 0;
-    var array = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-    function next { return array[i++]; }
-    function hasNext { return i < array.count; }
-  }
-  
-  class B extends Iterator {
-    var i = 0;
-    function next { return i * 3; }
-    function hasNext { return true; }
-  }
-  
-  class ArrayIt extends Iterator {
-    var a;
-    var i = 0;
-    function ArrayIt(array=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]) { a = array; }
-    function next { return a[i++]; }
-    function hasNext { return i < a.count; }
-    function reset { i = 0; }
-  }
+  //class A extends Iterator {
+  //  var i = 0;
+  //  var array = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  //  function next { return array[i++]; }
+  //  function hasNext { return i < array.count; }
+  //}
+  //
+  //class B extends Iterator {
+  //  var i = 0;
+  //  function next { return i * 3; }
+  //  function hasNext { return true; }
+  //}
   
   function setup {
     ctx = %[idx: 0, self: this];
-    a = new A();
+    a = Iterator.from([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+    emp_ary = new ArrayIterator([]);
+    d = Iterator.from(%[a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80, i: 90, j: 100]);
+    emp_dic = new DictionaryIterator(%[]);
   }
   
   function teardown {
-    invalidate ctx;
-    invalidate a;
+  	invalidate ctx;
+  	invalidate a;
+  	invalidate emp_ary;
+  	invalidate d;
+  	invalidate emp_dic;
+  }
+  
+  function test_inherit {
+  	assert((new ArrayIterator([])) instanceof 'Iterator', 'ArrayIterator does not inherit Iterator');
+  	assert((new DictionaryIterator(%[])) instanceof 'Iterator', 'DictionaryIterator does not inherit Iterator');
+  	var obj = [10, 20];
+  	Iterator.a = obj;
+  	assert_equal(Iterator.a, obj, '1');
+  	assert_equal(ArrayIterator.a, obj, '2');
+  	assert_equal(DictionaryIterator.a, obj, '3');
+  	assert_equal((new Iterator()).a, obj, '4');
+  	assert_equal((new ArrayIterator([])).a, obj, '5');
+  	assert_equal((new DictionaryIterator(%[])).a, obj, '6');
   }
   
   function test_1 {
-    var b = [];
+    var b = [], c = %[];
     while (a.hasNext()) {
       b.add(a.next());
     }
-    assert_equal_struct(b, a.array);
+    while (d.hasNext()) {
+      var kv = d.next();
+      c[kv[0]] = kv[1];
+    }
+    assert_equal_struct(b, [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], '1');
+    assert_equal(emp_ary.hasNext(), false, '2');
+    assert_equal_struct(c, %[a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80, i: 90, j: 100], '3');
+    assert_equal(emp_dic.hasNext(), false, '4');
   }
   
-  function test_each {
+  function test_array_each {
     // with return
     ctx.t = [];
     assert_equal(a.each(function (x, i, y, z) {
@@ -76,12 +105,18 @@ class TestIterator extends Test {
     a.each(->x[t.clear()] incontextof ctx);
     assert_equal_struct(ctx.t, [10,20,30,40,50,60,70,80,90,100], 'not exhausted');
     
-    a = new A();
-    assert_throw(-> [ (new A()).each() ], 'empty arg');
-    assert_throw(-> [ (new A()).map(null) ], 'null arg');
+    assert_equal(emp_ary.each(-> x { throw new Exception('iterated empty iterator'); }), void);
+    
+    setup();
+    assert_throw(-> [ a.each() ] incontextof %[a:a], 'empty arg 1');
+    assert_throw(-> [ emp_ary.each() ] incontextof %[emp_ary:emp_ary], 'empty arg 2');
+    
+    setup();
+    assert_throw(-> [ a.each(null) ] incontextof %[a:a], 'null arg 1');
+    assert_throw(-> [ emp_ary.each(null) ] incontextof %[emp_ary:emp_ary], 'null arg 2');
     
     // without return
-    ctx.idx = 0;
+    setup();
     assert_equal(a.each(function (x, i, y, z) {
       self.assert_equal(x, (idx+1)*10, 'arg 5');
       self.assert_equal(i, idx, 'arg 6');
@@ -91,7 +126,43 @@ class TestIterator extends Test {
     } incontextof ctx, 'a'), void, 'without return');
   }
   
-  function test_map {
+  function test_dict_each {
+    // with return
+    ctx.t = %[];
+    assert_equal(d.each(function (key, value, x, y) {
+      self.assert(global.Iterator.from(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']).any(->c[c === key] incontextof %[key:key]), 'arg 0');
+      self.assert_equal(value, (#key-0x60)*10, 'arg 1');
+      self.assert_equal(x, 'a', 'arg 2');
+      self.assert_equal(y, void, 'arg 3');
+      idx += 1;
+      t[key] = value;
+      return x;
+    } incontextof ctx, 'a'), void, 'with return');
+    assert_equal_struct(ctx.t, %[a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80, i: 90, j: 100], 'invalid arg');
+    d.each(->[t.clear()] incontextof ctx);
+    assert_equal_struct(ctx.t, %[a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80, i: 90, j: 100], 'not exhausted');
+    
+    assert_equal(emp_dic.each(-> x { throw new Exception('iterated empty iterator'); }), void);
+    
+    setup();
+    assert_throw(-> [ d.each() ] incontextof %[d:d], 'empty arg 1');
+    assert_throw(-> [ emp_dic.each() ] incontextof %[emp_dic:emp_dic], 'empty arg 2');
+    
+    setup();
+    assert_throw(-> [ d.each(null) ] incontextof %[a:a], 'null arg 1');
+    assert_throw(-> [ emp_dic.each(null) ] incontextof %[emp_dic:emp_dic], 'null arg 2');
+    
+    // without return
+    setup();
+    assert_equal(d.each(function (key, value, x, y) {
+      self.assert_equal(value, (#key-0x60)*10, 'arg 4');
+      self.assert_equal(x, 'a', 'arg 5');
+      self.assert_equal(y, void, 'arg 6');
+      idx += 1;
+    } incontextof ctx, 'a'), void, 'without return');
+  }
+  
+  function test_array_map {
     // with return
     assert_equal_struct(a.map(function (x, i, y, z) {
       self.assert_equal(x, (idx+1)*10, 'arg 1');
@@ -102,14 +173,43 @@ class TestIterator extends Test {
       return x * 2;
     } incontextof ctx, 'a'), [20,40,60,80,100,120,140,160,180,200], 'with return');
     assert_equal_struct(a.map(->x[x]), [], 'not exhausted');
-    assert_throw(-> [ (new A()).map() ], 'empty arg');
-    assert_throw(-> [ (new A()).map(null) ], 'null arg');
+    assert_equal_struct(emp_ary.map(-> x { throw new Exception('iterated empty iterator'); }), [], 'not empty');
+    
+    setup();
+    assert_throw(-> [ a.map() ] incontextof %[a:a], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ a.map(null) ] incontextof %[a:a], 'null arg');
     
     // without return
-    assert_equal_struct((new A()).map(function(x){x * 2;}), [void,void,void,void,void,void,void,void,void,void], 'without return');
+    setup();
+    assert_equal_struct(a.map(function(x){x * 2;}), [void,void,void,void,void,void,void,void,void,void], 'without return');
   }
   
-  function test_filter {
+  function test_dict_map {
+    // with return
+    assert_equal_struct(d.map(function (key, value, x, y) {
+      self.assert_equal(value, (#key-0x60)*10, 'arg 1');
+      self.assert_equal(x, 'a',  'arg 2');
+      self.assert_equal(y, void, 'arg 3');
+      idx += 1;
+      return [key, value * 2];
+    } incontextof ctx, 'a'), %[a: 20, b: 40, c: 60, d: 80, e: 100, f: 120, g: 140, h: 160, i: 180, j: 200], 'with return');
+    assert_equal_struct(d.map(->(k,v)[[k,v]]), %[], 'not exhausted');
+    assert_equal_struct(emp_dic.map(-> x { throw new Exception('iterated empty iterator'); }), %[], 'not empty');
+    
+    setup();
+    assert_throw(-> [ d.map() ] incontextof %[d:d], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ d.map(null) ] incontextof %[d:d], 'null arg');
+    
+    // without return
+    setup();
+    assert_equal_struct(d.map(function(k,v){[k,v*2];}), %[a:void,b:void,c:void,d:void,e:void,f:void,g:void,h:void,i:void,j:void], 'without return');
+  }
+  
+  function test_array_filter {
     // with return
     assert_equal_struct(a.filter(function (x, i, y, z) {
       self.assert_equal(x, (idx+1)*10, 'arg 1');
@@ -120,29 +220,89 @@ class TestIterator extends Test {
       return x % 3 === 0;
     } incontextof ctx, 'a'), [30,60,90], 'with return');
     assert_equal_struct(a.filter(->x[true]), [], 'not exhausted');
-    assert_throw(-> [ (new A()).filter() ], 'empty arg');
-    assert_throw(-> [ (new A()).filter(null) ], 'null arg');
+    assert_equal_struct(emp_ary.filter(-> x { throw new Exception('iterated empty iterator'); }), [], 'not empty');
+    
+    setup();
+    assert_throw(-> [ a.filter() ] incontextof %[a:a], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ a.filter(null) ] incontextof %[a:a], 'null arg');
     
     // without return
+    setup();
     assert_equal_struct(a.filter(function(x){x % 3 === 0;}), [], 'without return');
   }
   
-  function test_drop {
-    assert_equal_struct(a.drop(5), [60,70,80,90,100], 'drop(5)');
-    assert_equal_struct(a.drop(3), [], 'not exhausted');
-    assert_throw(-> [ (new A()).drop() ], 'empty arg');
-    assert_throw(-> [ (new A()).drop(null) ], 'null arg');
+  function test_dict_filter {
+    // with return
+    assert_equal_struct(d.filter(function (key, value, x, y) {
+      self.assert_equal(value, (#key-0x60)*10, 'arg 1');
+      self.assert_equal(x, 'a',  'arg 2');
+      self.assert_equal(y, void, 'arg 3');
+      idx += 1;
+      return value % 3 === 0;
+    } incontextof ctx, 'a'), %[c:30,f:60,i:90], 'with return');
+    assert_equal_struct(d.filter(->[true]), %[], 'not exhausted');
+    assert_equal_struct(emp_dic.filter(-> x { throw new Exception('iterated empty iterator'); }), %[], 'not empty');
+    
+    setup();
+    assert_throw(-> [ d.filter() ] incontextof %[d:d], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ d.filter(null) ] incontextof %[d:d], 'null arg');
+    
+    // without return
+    setup();
+    assert_equal_struct(d.filter(function(k,v){v % 3 === 0;}), %[], 'without return');
   }
   
-  function test_take {
+  function test_array_drop {
+    assert_equal_struct(a.drop(5), [60,70,80,90,100], 'drop(5)');
+    assert_equal_struct(a.drop(3), [], 'not exhausted');
+    
+    setup();
+    assert_throw(-> [ a.drop() ] incontextof %[a:a], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ a.drop(null) ] incontextof %[a:a], 'null arg');
+  }
+  
+  function test_dict_drop {
+    assert_equal(d.drop(5)->keys().count, 5, 'drop(5)');
+    assert_equal_struct(d.drop(3), %[], 'not exhausted');
+    
+    setup();
+    assert_throw(-> [ d.drop() ] incontextof %[d:d], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ d.drop(null) ] incontextof %[d:d], 'null arg');
+  }
+  
+  function test_array_take {
     assert_equal_struct(a.take(3), [10,20,30], 'take(3)');
     assert_equal_struct(a.take(7), [40,50,60,70,80,90,100], 'take(7)');
     assert_equal_struct(a.take(3), [], 'not exhausted');
-    assert_throw(-> [ (new A()).take() ], 'empty arg');
-    assert_throw(-> [ (new A()).take(null) ], 'null arg');
+    
+    setup();
+    assert_throw(-> [ a.take() ] incontextof %[a:a], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ a.take(null) ] incontextof %[a:a], 'null arg');
   }
   
-  function test_all {
+  function test_dict_take {
+    assert_equal(d.take(3)->keys().count, 3, 'take(3)');
+    assert_equal(d.take(7)->keys().count, 7, 'take(7)');
+    assert_equal_struct(d.take(3)->keys(), [], 'not exhausted');
+    
+    setup();
+    assert_throw(-> [ d.take() ] incontextof %[d:d], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ d.take(null) ] incontextof %[d:d], 'null arg');
+  }
+  
+  function test_array_all {
     // with return
     // all を呼んだあとのイテレータの位置は不定
     // 空のイテレータには true を返す
@@ -154,18 +314,50 @@ class TestIterator extends Test {
       idx += 1;
       return x % 10 === 0;
     } incontextof ctx, 'a'), true, 'with return 1');
-    assert_equal((new A()).all(->x[x%20===0]), false, 'with return 2');
+    assert_equal(emp_ary.all(->x[false]), true, 'empty it');
     
-    assert_equal((new ArrayIt()).all(->x[x]), true, 'array it');
-    assert_equal((new ArrayIt([])).all(->x[false]), true, 'empty it');
-    assert_throw(-> [ (new A()).all() ], 'empty arg');
-    assert_throw(-> [ (new A()).all(null) ], 'null arg');
+    setup();
+    assert_equal(a.all(->x[x%20===0]), false, 'with return 2');
+    
+    setup();
+    assert_throw(-> [ a.all() ] incontextof %[a:a], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ a.all(null) ] incontextof %[a:a], 'null arg');
     
     // without return
-    assert_equal((new A()).all(->{}), false, 'without return');
+    setup();
+    assert_equal(a.all(->{}), false, 'without return');
   }
   
-  function test_any {
+  function test_dict_all {
+    // with return
+    // all を呼んだあとのイテレータの位置は不定
+    // 空のイテレータには true を返す
+    assert_equal(d.all(function (key, value, x, y) {
+      self.assert_equal(value, (#key-0x60)*10, 'arg 1');
+      self.assert_equal(x, 'a', 'arg 2');
+      self.assert_equal(y, void, 'arg 3');
+      idx += 1;
+      return value % 10 === 0;
+    } incontextof ctx, 'a'), true, 'with return 1');
+    assert_equal(emp_dic.all(->[false]), true, 'empty it');
+    
+    setup();
+    assert_equal(d.all(->(k,v)[v%20===0]), false, 'with return 2');
+    
+    setup();
+    assert_throw(-> [ d.all() ] incontextof %[d:d], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ d.all(null) ] incontextof %[d:d], 'null arg');
+    
+    // without return
+    setup();
+    assert_equal(d.all(->{}), false, 'without return');
+  }
+  
+  function test_array_any {
     // with return
     // any を呼んだあとのイテレータの位置は不定
     // 空のイテレータには false を返す
@@ -177,19 +369,52 @@ class TestIterator extends Test {
       idx += 1;
       return x % 10 === 0;
     } incontextof ctx, 'a'), true, 'with return 1');
-    assert_equal((new A()).any(->x[x%33===0]), false, 'with return 2');
+    assert_equal(emp_ary.any(->x[true]), false, 'empty it');
     
-    assert_equal((new ArrayIt([])).any(->x[false]), false, 'empty it');
-    assert_throw(-> [ (new A()).any() ], 'empty arg');
-    assert_throw(-> [ (new A()).any(null) ], 'null arg');
+    setup();
+    assert_equal(a.any(->x[x%33===0]), false, 'with return 2');
+    
+    setup();
+    assert_throw(-> [ a.any() ] incontextof %[a:a], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ a.any(null) ] incontextof %[a:a], 'null arg');
     
     // without return
-    assert_equal((new A()).any(->{}), false, 'without return');
+    setup();
+    assert_equal(a.any(->{}), false, 'without return');
   }
   
-  function test_none {
+  function test_dict_any {
     // with return
     // any を呼んだあとのイテレータの位置は不定
+    // 空のイテレータには false を返す
+    assert_equal(d.any(function (key, value, x, y) {
+      self.assert_equal(value, (#key-0x60)*10, 'arg 1');
+      self.assert_equal(x, 'a', 'arg 2');
+      self.assert_equal(y, void, 'arg 3');
+      idx += 1;
+      return value % 10 === 0;
+    } incontextof ctx, 'a'), true, 'with return 1');
+    assert_equal(emp_dic.any(->[true]), false, 'empty it');
+    
+    setup();
+    assert_equal(d.any(->(k,v)[v%33===0]), false, 'with return 2');
+    
+    setup();
+    assert_throw(-> [ d.any() ] incontextof %[d:d], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ d.any(null) ] incontextof %[d:d], 'null arg');
+    
+    // without return
+    setup();
+    assert_equal(d.any(->{}), false, 'without return');
+  }
+  
+  function test_array_none {
+    // with return
+    // none を呼んだあとのイテレータの位置は不定
     // 空のイテレータには true を返す
     assert_equal(a.none(function (x, i, y, z) {
       self.assert_equal(x, (idx+1)*10, 'arg 1');
@@ -199,14 +424,47 @@ class TestIterator extends Test {
       idx += 1;
       return x % 33 === 0;
     } incontextof ctx, 'a'), true, 'with return 1');
-    assert_equal((new A()).none(->x[x%100===0]), false, 'with return 2');
+    assert_equal(emp_ary.none(->x[false]), true, 'empty it');
     
-    assert_equal((new ArrayIt([])).none(->x[false]), true, 'empty it');
-    assert_throw(-> [ (new A()).none() ], 'empty arg');
-    assert_throw(-> [ (new A()).none(null) ], 'null arg');
+    setup();
+    assert_equal(a.none(->x[x%100===0]), false, 'with return 2');
+    
+    setup();
+    assert_throw(-> [ a.none() ] incontextof %[a:a], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ a.none(null) ] incontextof %[a:a], 'null arg');
     
     // without return
-    assert_equal((new A()).none(->{}), true, 'without return');
+    setup();
+    assert_equal(a.none(->{}), true, 'without return');
+  }
+  
+  function test_dict_none {
+    // with return
+    // none を呼んだあとのイテレータの位置は不定
+    // 空のイテレータには true を返す
+    assert_equal(d.none(function (key, value, x, y) {
+      self.assert_equal(value, (#key-0x60)*10, 'arg 1');
+      self.assert_equal(x, 'a', 'arg 2');
+      self.assert_equal(y, void, 'arg 3');
+      idx += 1;
+      return value % 33 === 0;
+    } incontextof ctx, 'a'), true, 'with return 1');
+    assert_equal(emp_dic.none(->[false]), true, 'empty it');
+    
+    setup();
+    assert_equal(d.none(->(k,v)[v%100===0]), false, 'with return 2');
+    
+    setup();
+    assert_throw(-> [ d.none() ] incontextof %[d:d], 'empty arg');
+    
+    setup();
+    assert_throw(-> [ d.none(null) ] incontextof %[d:d], 'null arg');
+    
+    // without return
+    setup();
+    assert_equal(d.none(->{}), true, 'without return');
   }
   
   /*function test_forin_iterator {

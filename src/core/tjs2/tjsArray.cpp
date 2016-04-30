@@ -19,6 +19,7 @@
 #include "tjsUtils.h"
 #include "tjsBinarySerializer.h"
 #include "tjsOctPack.h"
+#include "tjsIterator.h"
 
 #ifndef TJS_NO_REGEXP
 #include "tjsRegExp.h"
@@ -1182,6 +1183,20 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */reduce)
     return TJS_S_OK;
 }
 TJS_END_NATIVE_METHOD_DECL(/* func.name */reduce)
+//----------------------------------------------------------------------
+TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */__iter__)
+{
+	if (result) {
+		tTJSVariant self(objthis, objthis);
+		auto x = TJSCreateArrayIterator(&self, nullptr);
+		*result = tTJSVariant(x, x);
+		x->Release();
+		int a = 0;
+	}
+	return TJS_S_OK;
+}
+TJS_END_NATIVE_METHOD_DECL(/* func.name */__iter__)
+//----------------------------------------------------------------------
 
 
 //----------------------------------------------------------------------
