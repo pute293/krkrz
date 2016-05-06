@@ -1,11 +1,6 @@
-//Scripts.dump();
-//function p(s) {
-//  if (s === void) s = 'void';
-//  if (s === null) s = 'null';
-//  Debug.message(s);
-//}
-
 Scripts.execStorage("TestClass.tjs");
+Test.init();
+
 Scripts.execStorage("syntax.tjs");
 Scripts.execStorage("array_functions.tjs");
 Scripts.execStorage("dict_functions.tjs");
@@ -15,3 +10,5 @@ Scripts.execStorage("loop.tjs");
 Scripts.execStorage("negative_cond.tjs");
 Scripts.execStorage("iterator.tjs");
 //Scripts.execStorage("forin.tjs");
+
+Test.showResult();

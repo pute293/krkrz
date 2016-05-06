@@ -13,14 +13,40 @@
 #define tjsIteratorH
 
 #include <algorithm>
-#include <functional>
 #include <unordered_set>
 #include "tjsCommHead.h"
 #include "tjsNative.h"
 
-
 namespace TJS
 {
+//---------------------------------------------------------------------------
+// TJS `Iterator` class/instance
+//   - The base class of all Iterator classes.
+//   - This class behaves like ArrayIterator
+//     (methods such as map, filter, ... returns an Array object).
+//   - In default implementation, `hasNext()` return always `true`
+//     and `next()` returns `void` eternally.
+//---------------------------------------------------------------------------
+// - ctor
+//   - new Iterator(args...)
+//       All arguments will be ignored.
+// - dtor
+//   - invalidate iter;
+//       Invalidate this object.
+//       Do nothing for Back-end object
+//---------------------------------------------------------------------------
+// - static methods
+//   - Iterator.from(obj)
+//       if obj is an Array then return ArrayIterator
+//       if obj is a Dictionary then return DictionaryIterator
+//       if obj is an Iterator then return obj itself
+//       otherwise throw error
+//---------------------------------------------------------------------------
+// - instance methods
+//   - current()
+//       returns the current element
+//   - moveNext()
+//       moves to next state and returns wheather moved or not
 //---------------------------------------------------------------------------
 class tTJSNI_Iterator : public tTJSNativeInstance
 {
@@ -29,7 +55,6 @@ class tTJSNI_Iterator : public tTJSNativeInstance
 public:
 	tTJSNI_Iterator();
 
-private:
 };
 
 //---------------------------------------------------------------------------
@@ -39,6 +64,7 @@ class tTJSNC_Iterator : public tTJSNativeClass
 
 public:
 	tTJSNC_Iterator();
+	tjs_uint TJS_INTF_METHOD Release();
 	
 	static tjs_uint32 ClassID;
 
@@ -46,10 +72,13 @@ private:
 	tTJSNativeInstance *CreateNativeInstance();
 };
 
+
 //---------------------------------------------------------------------------
-class tTJSNI_ArrayIterator : public tTJSNI_Iterator
+// TJS ArrayIterator class/instance
+//---------------------------------------------------------------------------
+class tTJSNI_ArrayIterator : public tTJSNativeInstance
 {
-	typedef tTJSNI_Iterator inherited;
+	typedef tTJSNativeInstance inherited;
 
 public:
 	template<typename Action>
@@ -101,19 +130,32 @@ public:
 		Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj);
 	void TJS_INTF_METHOD Destruct();
 
-	tjs_error Next(tTJSVariant *val) { return BackEnd->PropGetByNum(TJS_MEMBERMUSTEXIST | TJS_IGNOREPROP, Index++, val, BackEnd); }
-	bool HasNext(void) {
+	tjs_error GetCurrent(tTJSVariant *val) {
+		if (Index < 0) {
+			val->Clear();
+			return TJS_S_OK;
+		}
+		return BackEnd->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, Index, val, BackEnd);
+	}
+	bool MoveNext(void) {
 		tTJSVariant count;
 		BackEnd->PropGet(0, TJS_W("count"), &CountHint, &count, BackEnd);
-		return Index < (tjs_int)count;
+		if (Index + 1 < (tjs_int)count) {
+			Index += 1;
+			return true;
+		}
+		return false;
 	}
 
 private:
 	iTJSDispatch2 *BackEnd = nullptr;
-	tjs_int Index = 0;
-	static tjs_uint32 CountHint;
+	tjs_int Index = -1;
+	tjs_uint32 CountHint = 0;
 };
 
+
+//---------------------------------------------------------------------------
+// TJS DictionaryIterator class/instance
 //---------------------------------------------------------------------------
 class tTJSNC_ArrayIterator : public tTJSNativeClass
 {
@@ -129,9 +171,9 @@ private:
 };
 
 //---------------------------------------------------------------------------
-class tTJSNI_DictionaryIterator : public tTJSNI_Iterator
+class tTJSNI_DictionaryIterator : public tTJSNativeInstance
 {
-	typedef tTJSNI_Iterator inherited;
+	typedef tTJSNativeInstance inherited;
 
 public:
 	template<typename Action>
@@ -156,40 +198,16 @@ public:
 		Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj);
 	void TJS_INTF_METHOD Destruct();
 
-	tjs_error Next(tTJSVariant *val) {
-		tTJSVariant ret_key, ret_val;
-		tTJSVariant *param[2]; param[0] = &ret_key; param[1] = &ret_val;
-		for (const tjs_char *key : CachedKeys) {
-			if (GetDictValue(key, &ret_val) == TJS_S_OK) {
-				CachedKeys.erase(key);
-				VisitedKeys.insert(key);
-				
-				ret_key = key;
-				tTJSArrayObject *array = (tTJSArrayObject*)TJSCreateArrayObject();
-				array->FuncCall(0, TJS_W("push"), nullptr, nullptr, 2, param, array);
-				*val = tTJSVariant(array, array);
-				array->Release();
-				return TJS_S_OK;
-			}
-		}
-		// `hasNext` returns false, but `next` called
-		val->Clear();
-		return TJS_S_OK;
-	}
-	bool HasNext(void) {
-		if (CachedKeys.empty() && !UpdateKeys()) return false;
-		tTJSVariant dummy;
-		for (const tjs_char *key : CachedKeys)
-			if (GetDictValue(key, &dummy) == TJS_S_OK)
-				return true;
-		return false;
-	}
+	tjs_error GetCurrent(tTJSVariant *val);
+	bool MoveNext(void);
 	bool UpdateKeys(void);
 
 private:
-	tjs_error GetDictValue(const tjs_char *key, tTJSVariant *result) {
-		return BackEnd->PropGet(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, key, nullptr, result, BackEnd);
+	bool isExist(const tjs_char *key) {
+		tTJSVariant dummy;
+		return TJS_S_OK == BackEnd->PropGet(TJS_MEMBERMUSTEXIST, key, nullptr, &dummy, BackEnd);
 	}
+	tjs_error GetPair(const tjs_char *key, tTJSVariant *result);
 
 private:
 	struct DictKeyEqual {
@@ -223,6 +241,7 @@ private:
 
 private:
 	iTJSDispatch2 *BackEnd = nullptr;
+	tjs_char *CurrentKey = nullptr;
 	KeySet CachedKeys;	// keys not visited yet (may not exist)
 	KeySet VisitedKeys;	// keys already visited
 };
@@ -242,6 +261,8 @@ private:
 };
 
 //---------------------------------------------------------------------------
+
+
 
 //---------------------------------------------------------------------------
 // TJSCreateArrayIterator

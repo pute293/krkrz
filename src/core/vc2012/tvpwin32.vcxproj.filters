@@ -551,6 +551,15 @@
     <ClInclude Include="..\tjs2\tjsIterator.h">
       <Filter>tjs2</Filter>
     </ClInclude>
+    <ClInclude Include="..\tjs2\tjsLazyIterator.h">
+      <Filter>tjs2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\tjs2\tjsIteratorInternal.h">
+      <Filter>tjs2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\tjs2\tjsLazyIteratorInternal.h">
+      <Filter>tjs2</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\tjs2\tjs.cpp">
@@ -986,6 +995,9 @@
       <Filter>visual\IA32</Filter>
     </ClCompile>
     <ClCompile Include="..\tjs2\tjsIterator.cpp">
+      <Filter>tjs2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tjs2\tjsLazyIterator.cpp">
       <Filter>tjs2</Filter>
     </ClCompile>
   </ItemGroup>

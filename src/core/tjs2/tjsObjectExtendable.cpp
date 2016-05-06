@@ -19,8 +19,11 @@ void tTJSExtendableObject::SetSuper( iTJSDispatch2* dsp ) {
 		SuperClass->Release();
 		SuperClass = NULL;
 	}
+	SetSuperWithoutRelease(dsp);
+}
+void tTJSExtendableObject::SetSuperWithoutRelease( iTJSDispatch2* dsp ) {
 	SuperClass = dsp;
-	SuperClass->AddRef();
+	if ( SuperClass ) SuperClass->AddRef();
 }
 void tTJSExtendableObject::ExtendsClass( iTJSDispatch2* global, const ttstr& classname ) {
 	tTJSVariant val;
@@ -108,6 +111,9 @@ tTJSExtendableObject::Invalidate(tjs_uint32 flag, const tjs_char *membername, tj
 		hr = SuperClass->Invalidate( flag, membername, hint, objthis);
 	}
 	if( membername == NULL ) {
+#ifdef _DEBUG
+		if (!SuperClass) ::DebugBreak();    // SuperClass must not NULL!
+#endif
 		SuperClass->Invalidate( flag, membername, hint, objthis);
 	}
 	return hr;

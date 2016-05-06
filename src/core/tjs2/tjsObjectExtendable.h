@@ -26,6 +26,7 @@ public:
 	const iTJSDispatch2* GetSuper() const { return SuperClass; }
 
 	void SetSuper( iTJSDispatch2* dsp );
+	void SetSuperWithoutRelease( iTJSDispatch2* dsp );
 
 	tjs_error TJS_INTF_METHOD
 	FuncCall(tjs_uint32 flag, const tjs_char * membername, tjs_uint32 *hint,

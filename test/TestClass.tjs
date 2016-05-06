@@ -3,6 +3,19 @@ class Test {
   var tests = [];
   var name;
   
+  function init {
+    Test.__results__ = [];
+  }
+  
+  function puts(str) {
+    Debug.message(str);
+  }
+  
+  function showResult {
+    var r = Test.__results__;
+    for (var i = 0; i < r.count; ++i) Debug.message('\r' + r[i].toString());
+  }
+  
   function Test(name) {
     this.name = name;
   }
@@ -21,11 +34,8 @@ class Test {
       for (var i = 0, e = keys.count; i < e; ++i) items.add(@'${keys[i]}: ${toString(obj[keys[i]])}');
       return @'%[${items.join(", ")}]';
     }
+    if (typeof obj === 'String') return @'"${obj}"';
     return (string)obj;
-  }
-  
-  function puts(str) {
-    Debug.message(str);
   }
   
   function equal_struct(obj1, obj2) {
@@ -72,9 +82,15 @@ class Test {
   }
   
   function assert(v, str='') {
-  	if (v) return true;
-  	str = str.length ? @'${str}: ' : '';
-  	throw new Exception(@'${str}assertion failed');
+    if (v) return true;
+    str = str.length ? @'${str}: ' : '';
+    throw new Exception(@'${str}assertion failed');
+  }
+  
+  function assert_not(v, str='') {
+    if (!v) return true;
+    str = str.length ? @'${str}: ' : '';
+    throw new Exception(@'${str}assertion failed');
   }
   
   function assert_equal(v, expected, str='') {
@@ -91,6 +107,13 @@ class Test {
     var ex = toString(not_expected);
     str = str.length ? @'${str}: ' : '';
     throw new Exception(@'${str}${ex} is not expected, but ${v}');
+  }
+  
+  function assert_include(v, array, str='') {
+    for (var i = 0; i < array.count; ++i)
+      if (equal_struct(v, array[i])) return true;
+    str = str.length ? @'${str}: ' : '';
+    throw new Exception(@'${str}one of ${toString(array)} is not expected, but ${toString(v)}');
   }
   
   function assert_throw(fn, str='') {
@@ -129,28 +152,66 @@ class Test {
   
   function teardown() { }
   
-  function run() {
-    puts(@'@@@ TEST ${name} ==============================');
-    var result = [];
+  function run(puts_now=false) {
+    var result = new TestResult(name);
+    
     for (var i = 0; i < tests.count; ++i) {
-      setup();
       var test = tests[i];
+      if (test === void || test.length === 0) continue;
+      setup();
       try {
         this[test]();
-        result.add([true, @'\033[32m  ${test}: success\033[0m']);
+        result.add(test, true);
       } catch (e) {
-        result.add([false, @'\033[31m  ${test}: ${e.message}\033[0m']);
+        var str = e ? e.message : 'unknown error (VOID Exception)';
+        result.add(test, false, str);
+      }
+      teardown();
+    }
+    
+    global.Test.__results__.add(result);
+    if (puts_now) puts(result.toString());
+  }
+  
+  class TestResult {
+    var name;
+    var results = [];
+    
+    function TestResult(name) { this.name = name; }
+    
+    function add(test_name, is_successed, message) {
+      message = 'successed' if (!message && is_successed);
+      message = '' if message.length === 0;
+      results.add([is_successed, test_name, message]);
+    }
+    
+    function toString(with_color=true) {
+      var green = with_color ? '\033[32m' : '';
+      var red = with_color ? '\033[31m' : '';
+      var normal = with_color ? '\033[0m' : '';
+      
+      var banner = @'@@@ TEST ${name} '; while (banner.length < 80) banner += '=';
+      banner += '\n';
+      
+      var r = [];
+      var successed = 0;
+      var failed = 0;
+      for (var i = 0; i < results.count; ++i) {
+        var rs = results[i];
+        r.add(@'|  ${rs[0] ? green : red}${rs[1]}: ${rs[2]}${normal}');
+        successed += 1 if rs[0];
+        failed += 1 if !rs[0];
+      }
+      
+      var summary = failed ? @'|>  ${red}FAIL ${failed} TESTS${normal}' : @'|>  ${green}SUCCESS ALL TESTS${normal}';
+      
+      if (failed) {
+        var line = '|-'; while (line.length < banner.length) line += '-';
+        line += '\n';
+        return banner + summary + '\n' + line + r.join('\n');
+      } else {
+        return banner + summary;
       }
     }
-    teardown();
-    for (var i = 0; i < result.count; ++i) puts(result[i][1]);
-    var ok = result.filter(-> x [ x[0] ]).count;
-    var fail = result.filter(-> x [ !x[0] ]).count;
-    if (fail === 0) {
-      puts('\033[32m  SUCCESS ALL TESTS\033[0m');
-    } else {
-      puts(@'\033[31m  FAIL ${fail} TESTS\033[0m');
-    }
-    puts(@'$$$ TEST ${name} ==============================');
   }
 }

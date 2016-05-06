@@ -31,6 +31,7 @@
 #include "tjsBinarySerializer.h"
 #include "tjsRegExp.h"
 #include "tjsIterator.h"
+#include "tjsLazyIterator.h"
 
 namespace TJS
 {

@@ -6,6 +6,7 @@ class TestIterator extends Test {
   var tests = [
     'test_inherit',
     'test_1',
+    
     'test_array_each',
     'test_array_map',
     'test_array_filter',
@@ -14,6 +15,7 @@ class TestIterator extends Test {
     'test_array_all',
     'test_array_any',
     'test_array_none',
+    
     'test_dict_each',
     'test_dict_map',
     'test_dict_filter',
@@ -21,29 +23,31 @@ class TestIterator extends Test {
     'test_dict_take',
     'test_dict_all',
     'test_dict_any',
-    'test_dict_none'
-    //'test_forin_iterator',
-    //'test_forin_array',
-    //'test_forin_dict'
+    'test_dict_none',
+    
+    'test_lazy_each',
+    'test_lazy_map',
+    'test_lazy_filter',
+    'test_lazy_takedrop',
+    'test_lazy_all',
+    'test_lazy_any',
+    'test_lazy_none',
+    'test_lazy'
   ];
   var ctx;
   var a;
   var d;
   var emp_ary;
   var emp_dic;
+  var inf;
   
-  //class A extends Iterator {
-  //  var i = 0;
-  //  var array = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-  //  function next { return array[i++]; }
-  //  function hasNext { return i < array.count; }
-  //}
-  //
-  //class B extends Iterator {
-  //  var i = 0;
-  //  function next { return i * 3; }
-  //  function hasNext { return true; }
-  //}
+  class InfiniteIt extends Iterator.Lazy {
+    var i = -1;
+    var X = 5;
+    function InfiniteIt() { super.Lazy(); }
+    function current { return i * 3; }
+    function moveNext { i += 1; return true; }
+  }
   
   function setup {
     ctx = %[idx: 0, self: this];
@@ -51,42 +55,77 @@ class TestIterator extends Test {
     emp_ary = new ArrayIterator([]);
     d = Iterator.from(%[a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80, i: 90, j: 100]);
     emp_dic = new DictionaryIterator(%[]);
+    inf = new InfiniteIt();
   }
   
   function teardown {
-  	invalidate ctx;
-  	invalidate a;
-  	invalidate emp_ary;
-  	invalidate d;
-  	invalidate emp_dic;
+    invalidate ctx;
+    invalidate a;
+    invalidate emp_ary;
+    invalidate d;
+    invalidate emp_dic;
+    invalidate inf;
   }
   
   function test_inherit {
-  	assert((new ArrayIterator([])) instanceof 'Iterator', 'ArrayIterator does not inherit Iterator');
-  	assert((new DictionaryIterator(%[])) instanceof 'Iterator', 'DictionaryIterator does not inherit Iterator');
-  	var obj = [10, 20];
-  	Iterator.a = obj;
-  	assert_equal(Iterator.a, obj, '1');
-  	assert_equal(ArrayIterator.a, obj, '2');
-  	assert_equal(DictionaryIterator.a, obj, '3');
-  	assert_equal((new Iterator()).a, obj, '4');
-  	assert_equal((new ArrayIterator([])).a, obj, '5');
-  	assert_equal((new DictionaryIterator(%[])).a, obj, '6');
+    var obj = [10, 20];
+    Iterator.a = obj;
+    
+    var it = new Iterator();
+    var ait = new ArrayIterator([]);
+    var dit = new DictionaryIterator(%[]);
+    var lit = new Iterator.Lazy();
+    //var lmit = new Iterator.Lazy.LazyMap([0],->x[x]);
+    //var lfit = new Iterator.Lazy.LazyFilter([0],->x[x]);
+    var IT = 'Iterator', AIT = 'ArrayIterator', DIT = 'DictionaryIterator',
+        LIT = 'Lazy';//, LMIT = 'LazyMap', LFIT = 'LazyFilter';
+    
+    assert(it instanceof IT, 'Iterator does not inherit Iterator (!!!)');
+    
+    assert(ait instanceof  IT, 'ArrayIterator does not inherit Iterator');
+    assert(ait instanceof AIT, 'ArrayIterator does not inherit ArrayIterator (!!!)');
+    
+    assert(dit instanceof  IT, 'DictionaryIterator does not inherit Iterator');
+    assert(dit instanceof DIT, 'DictionaryIterator does not inherit DictionaryIterator (!!!)');
+    
+    assert(lit instanceof  IT, 'Iterator.Lazy does not inherit Iterator');
+    assert(lit instanceof LIT, 'Iterator.Lazy does not inherit Iterator.Lazy (!!!)');
+    
+    //assert(lmit instanceof   IT, 'Iterator.Lazy.LazyMap does not inherit Iterator');
+    //assert(lmit instanceof  LIT, 'Iterator.Lazy.LazyMap does not inherit Iterator.Lazy');
+    //assert(lmit instanceof LMIT, 'Iterator.Lazy.LazyMap does not inherit Iterator.Lazy.LazyMap (!!!)');
+    //
+    //assert(lfit instanceof   IT, 'Iterator.Lazy.LazyFilter does not inherit Iterator');
+    //assert(lfit instanceof  LIT, 'Iterator.Lazy.LazyFilter does not inherit LazyIterator');
+    //assert(lfit instanceof LFIT, 'Iterator.Lazy.LazyFilter does not inherit Iterator.Lazy.LazyFilter (!!!)');
+    
+    assert_equal(Iterator.a, obj, '1');
+    assert_equal(ArrayIterator.a, obj, '2');
+    assert_equal(DictionaryIterator.a, obj, '3');
+    assert_equal(Iterator.Lazy.a, obj, '4');
+    //assert_equal(Iterator.Lazy.LazyMap.a, obj, '5');
+    //assert_equal(Iterator.Lazy.LazyFilter.a, obj, '6');
+    assert_equal(it.a, obj, '7');
+    assert_equal(ait.a, obj, '8');
+    assert_equal(dit.a, obj, '9');
+    assert_equal(lit.a, obj, '10');
+    //assert_equal(lmit.a, obj, '11');
+    //assert_equal(lfit.a, obj, '12');
   }
   
   function test_1 {
     var b = [], c = %[];
-    while (a.hasNext()) {
-      b.add(a.next());
+    while (a.moveNext()) {
+      b.add(a.current());
     }
-    while (d.hasNext()) {
-      var kv = d.next();
+    while (d.moveNext()) {
+      var kv = d.current();
       c[kv[0]] = kv[1];
     }
     assert_equal_struct(b, [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], '1');
-    assert_equal(emp_ary.hasNext(), false, '2');
+    assert_equal(emp_ary.moveNext(), false, '2');
     assert_equal_struct(c, %[a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80, i: 90, j: 100], '3');
-    assert_equal(emp_dic.hasNext(), false, '4');
+    assert_equal(emp_dic.moveNext(), false, '4');
   }
   
   function test_array_each {
@@ -162,6 +201,24 @@ class TestIterator extends Test {
     } incontextof ctx, 'a'), void, 'without return');
   }
   
+  function test_lazy_each {
+    ctx.t = [];
+    try {
+      inf.each(-> (x,i,y,z) {
+        if (idx === 10) throw new global.Exception('StopIteration');
+        self.assert_equal(x, idx*3, 'arg 1');
+        self.assert_equal(i, idx, 'arg 2');
+        self.assert_equal(y, 'a', 'arg 3');
+        self.assert_equal(z, void, 'arg 4');
+        t.add(x);
+        idx += 1;
+      } incontextof ctx, 'a');
+      throw new Exception('exhausted');
+    } catch (e) {
+      assert_equal(e.message, 'StopIteration', 'stop by exception');
+    }
+  }
+  
   function test_array_map {
     // with return
     assert_equal_struct(a.map(function (x, i, y, z) {
@@ -207,6 +264,10 @@ class TestIterator extends Test {
     // without return
     setup();
     assert_equal_struct(d.map(function(k,v){[k,v*2];}), %[a:void,b:void,c:void,d:void,e:void,f:void,g:void,h:void,i:void,j:void], 'without return');
+  }
+  
+  function test_lazy_map {
+    assert_equal_struct(inf.map(->x[x*2]).take(5).toArray(), [0,6,12,18,24], 'map');
   }
   
   function test_array_filter {
@@ -256,6 +317,10 @@ class TestIterator extends Test {
     assert_equal_struct(d.filter(function(k,v){v % 3 === 0;}), %[], 'without return');
   }
   
+  function test_lazy_filter {
+    assert_equal_struct(inf.filter(->x[x%5===0]).take(3).toArray(), [0,15,30], 'filter');
+  }
+  
   function test_array_drop {
     assert_equal_struct(a.drop(5), [60,70,80,90,100], 'drop(5)');
     assert_equal_struct(a.drop(3), [], 'not exhausted');
@@ -300,6 +365,22 @@ class TestIterator extends Test {
     
     setup();
     assert_throw(-> [ d.take(null) ] incontextof %[d:d], 'null arg');
+  }
+  
+  function test_lazy_takedrop {
+    assert_equal_struct(inf.filter(->x[x%12===0]).take(10).toArray(), [0,12,24,36,48,60,72,84,96,108], 'filter');
+    
+    setup();
+    assert_equal_struct(inf.take(3).toArray(), [0,3,6], 'take(3)');
+    
+    setup();
+    assert_equal_struct(inf.drop(2).take(4).toArray(), [6,9,12,15], 'drop(2).take(4)');
+    
+    setup();
+    assert_equal_struct(inf.take(4).drop(2).toArray(), [6,9], 'take(4).drop(2)');
+    
+    setup();
+    assert_equal_struct(inf.drop(10).take(1).toArray(), [30], 'drop(10).take(1)');
   }
   
   function test_array_all {
@@ -357,6 +438,13 @@ class TestIterator extends Test {
     assert_equal(d.all(->{}), false, 'without return');
   }
   
+  function test_lazy_all {
+    assert(inf.take(100).all(->x[x%3===0]), 'all 1');
+    
+    setup();
+    assert_not(inf.all(->x[x%5===0]), 'all 2');
+  }
+  
   function test_array_any {
     // with return
     // any を呼んだあとのイテレータの位置は不定
@@ -410,6 +498,13 @@ class TestIterator extends Test {
     // without return
     setup();
     assert_equal(d.any(->{}), false, 'without return');
+  }
+  
+  function test_lazy_any {
+    assert(inf.any(->x[x%5===0]), 'any 1');
+    
+    setup();
+    assert_not(inf.take(100).any(->x[x*2===3]), 'any 2');
   }
   
   function test_array_none {
@@ -467,6 +562,33 @@ class TestIterator extends Test {
     assert_equal(d.none(->{}), true, 'without return');
   }
   
+  function test_lazy_none {
+    assert(inf.take(100).none(->x[x*2===3]), 'none 1');
+    
+    setup();
+    assert_not(inf.none(->x[x%5===0]), 'none 2');
+  }
+  
+  function test_lazy {
+    var c = %[i:0, j:0, self:this];
+    assert_equal_struct(inf.drop(10).map(-> (x, idx, y, z) {
+      self.assert_equal(idx, i, 'arg 5');
+      self.assert_equal(y, 'b', 'arg 6');
+      self.assert_equal(z, void, 'arg 7');
+      i += 1;
+      return x * 2;
+    } incontextof c, 'b').filter(-> x {
+      // check context (should be `inf` itself)
+      return x % X === 0;
+    }).take(5).map(-> (x, idx) {
+      self.assert_equal(idx, j, 'arg 8');
+      j += 1;
+      return x;
+    } incontextof c).toArray(), [60, 90, 120, 150, 180], 'long chain');
+    assert_equal(c.j, 5, 'iteration after take');
+    assert_equal(c.i, 21, 'iteration before take');
+  }
+  
   /*function test_forin_iterator {
     var a = new A();
     var b = [], c = [];
@@ -483,60 +605,6 @@ class TestIterator extends Test {
     
     assert_equal_struct(b, a.array, '1');
     assert_equal_struct(c, a.array, '2');
-  }
-  
-  function test_forin_array {
-    var a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-    var b = [], c = [], d = [];
-    var x = void;
-    for (var x in a) {
-      b.add(x);
-    }
-    assert_equal(x, void, '1');
-    assert_equal_struct(a, [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], '2');
-    assert_equal_struct(b, a, '3');
-    
-    for (var x in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]) {
-      c.add(x);
-    }
-    assert_equal(x, void, '4');
-    assert_equal_struct(c, a, '5');
-    
-    for (x in a) {
-      d.add(x);
-    }
-    assert_equal(x, 100, '6');
-    assert_equal_struct(a, [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], '7');
-    assert_equal_struct(d, a, '8');
-  }
-  
-  function test_forin_dict {
-    var a = %[
-      a : 10,
-      b : 20,
-      c : 30
-    ];
-    var b = %[], c = %[], d = %[];
-    var x = void;
-    for (var x in a) {
-      b[x.key] = x.value;
-    }
-    assert_equal(x, void, '1');
-    assert_equal_struct(a, [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], '2');
-    assert_equal_struct(b, a, '3');
-    
-    for (var x in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]) {
-      c.add(x);
-    }
-    assert_equal(x, void, '4');
-    assert_equal_struct(c, a, '5');
-    
-    for (x in a) {
-      d.add(x);
-    }
-    assert_equal(x, 100, '6');
-    assert_equal_struct(a, [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], '7');
-    assert_equal_struct(d, a, '8');
   }*/
   
 }

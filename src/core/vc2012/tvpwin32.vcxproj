@@ -414,6 +414,9 @@
     <ClInclude Include="..\tjs2\tjsInterCodeGen.h" />
     <ClInclude Include="..\tjs2\tjsInterface.h" />
     <ClInclude Include="..\tjs2\tjsIterator.h" />
+    <ClInclude Include="..\tjs2\tjsIteratorInternal.h" />
+    <ClInclude Include="..\tjs2\tjsLazyIterator.h" />
+    <ClInclude Include="..\tjs2\tjsLazyIteratorInternal.h" />
     <ClInclude Include="..\tjs2\tjsLex.h" />
     <ClInclude Include="..\tjs2\tjsMath.h" />
     <ClInclude Include="..\tjs2\tjsMessage.h" />
@@ -572,6 +575,7 @@
     <ClCompile Include="..\tjs2\tjsInterCodeGen.cpp" />
     <ClCompile Include="..\tjs2\tjsInterface.cpp" />
     <ClCompile Include="..\tjs2\tjsIterator.cpp" />
+    <ClCompile Include="..\tjs2\tjsLazyIterator.cpp" />
     <ClCompile Include="..\tjs2\tjsLex.cpp" />
     <ClCompile Include="..\tjs2\tjsMath.cpp" />
     <ClCompile Include="..\tjs2\tjsMessage.cpp" />
