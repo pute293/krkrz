@@ -49,6 +49,9 @@
   - native Enumerable class
     - python, ruby, javascript 風のどれか、あるいは混ぜたもの
 - ローカル変数を捕捉するクロージャ
+- 配列の内包表記
+- 文字列配列の省略表記
+- `Iterator` への便利メソッドの追加
 
 ---
 以下、krkrz のライセンス表記
