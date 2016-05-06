@@ -149,6 +149,7 @@ int __yyerror(char * msg, void *pm);
 	T_SWITCH				"switch"
 	T_IN					"in"
 	T_INCONTEXTOF			"incontextof"
+	T_FOREACH				"foreach"
 	T_FOR					"for"
 	T_WHILE					"while"
 	T_UNTIL					"until"
@@ -211,7 +212,7 @@ int __yyerror(char * msg, void *pm);
 	compare_expr shift_expr add_sub_expr mul_div_expr mul_div_expr_and_asterisk
 	unary_expr incontextof_expr priority_expr factor_expr call_arg call_arg_list
 	func_expr_def arrow_expr_def func_call_expr expr_no_comma inline_array array_elm inline_dic dic_elm
-	const_inline_array const_inline_dic
+	const_inline_array const_inline_dic forin_decl
 
 %%
 
@@ -254,6 +255,7 @@ statement
 	| until
 	| do_while
 	| for
+	| forin
 	| loop
 	| "break" ";"							{ cc->DoBreak(); }
 	| "continue" ";"						{ cc->DoContinue(); }
@@ -396,6 +398,83 @@ for_second_clause
 for_third_clause
 	: /* empty */							{ cc->SetForThirdExprCode(NULL); }
 	| expr									{ cc->SetForThirdExprCode($1); }
+;
+
+/* # a for-in loop
+ * ## syntax
+ *     for ( $$$ id in expr ) block_or_statement
+ *       where $$$ := var | const | *empty*
+ * ## semantics
+ * syntactic sugar of code:
+ *     { // create a scope for a temporary variable
+ *       var $1 = Iterator.from(expr);
+ *       while ($1.moveNext()) {
+ *         $$$ id = $1.current();
+ *         block_or_statement
+ *       }
+ *     }
+ * then same as:
+ *     for (var $1 = Iterator.from(expr); $1.moveNext(); ) {
+ *       $$$ id = $1.current();
+ *     }
+ * where $1 is a compiler generated temporary variable
+ */
+forin
+	: "foreach" "("							{ cc->EnterForCode(); }
+	  forin_decl "in" expr ")"				{ tjs_char *temp = cc->GetTemporaryVariableName();
+	  											  { // var $1 = Iterator.from(expr);
+	  											    // [1] Iterator.from
+	  											    auto iter = cc->MakeNP0(T_SYMBOL);
+	  											    auto from = cc->MakeNP0(T_SYMBOL);
+	  											    iter->SetValue(tTJSVariant("Iterator"));
+	  											    from->SetValue(tTJSVariant("from"));
+	  											    auto caller = cc->MakeNP2(T_DOT, iter, from);
+	  											    // [2] [1](expr)
+	  											    auto arg = cc->MakeNP1(T_ARG, $6);
+	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
+	  											    // [3] var $1 = [2]
+	  											    cc->InitLocalVariable(temp, call);
+	  											  }
+	  											  { // $1.moveNext();
+	  											    // [1] $1.moveNext
+	  											    auto t1 = cc->MakeNP0(T_SYMBOL);
+	  											    auto next = cc->MakeNP0(T_SYMBOL);
+	  											    t1->SetValue(tTJSVariant(temp));
+	  											    next->SetValue(tTJSVariant("moveNext"));
+	  											    auto caller = cc->MakeNP2(T_DOT, t1, next);
+	  											    // [2] [1]()
+	  											    auto arg = cc->MakeNP1(T_ARG, nullptr);
+	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
+	  											    cc->CreateForExprCode(call);
+	  											  }
+	  											  cc->SetForThirdExprCode(nullptr);
+	  											  { // $$$ id = $1.current();
+	  											    // [1] $1.current
+	  											    auto t1 = cc->MakeNP0(T_SYMBOL);
+	  											    auto cur = cc->MakeNP0(T_SYMBOL);
+	  											    t1->SetValue(tTJSVariant(temp));
+	  											    cur->SetValue(tTJSVariant("current"));
+	  											    auto caller = cc->MakeNP2(T_DOT, t1, cur);
+	  											    // [2] [1]()
+	  											    auto arg = cc->MakeNP1(T_ARG, nullptr);
+	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
+	  											    // [3] $$$ id = [2]
+	  											    cc->CreateExprCode(cc->MakeNP2(T_EQUAL, $4, call));
+	  											  }
+	  											  delete[] temp;
+	  											}
+	  block_or_statement						{ cc->ExitForCode(); }
+;
+
+forin_decl
+	: "var" T_SYMBOL variable_type				{ $$ = cc->MakeNP0(T_SYMBOL); 
+												  $$->SetValue(lx->GetString($2));
+												  cc->AddLocalVariable(lx->GetString($2)); }
+	| "const" T_SYMBOL variable_type			{ $$ = cc->MakeNP0(T_SYMBOL); 
+												  $$->SetValue(lx->GetString($2));
+												  cc->AddLocalVariable(lx->GetString($2)); }
+	| T_SYMBOL variable_type					{ $$ = cc->MakeNP0(T_SYMBOL);
+												  $$->SetValue(lx->GetString($1)); }
 ;
 
 /* # a while loop

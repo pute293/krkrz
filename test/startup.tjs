@@ -1,14 +1,24 @@
 Scripts.execStorage("TestClass.tjs");
 Test.init();
 
-Scripts.execStorage("syntax.tjs");
-Scripts.execStorage("array_functions.tjs");
-Scripts.execStorage("dict_functions.tjs");
-Scripts.execStorage("arrow.tjs");
-Scripts.execStorage("dict_shortcut.tjs");
-Scripts.execStorage("loop.tjs");
-Scripts.execStorage("negative_cond.tjs");
-Scripts.execStorage("iterator.tjs");
-//Scripts.execStorage("forin.tjs");
+var err = '';
 
+try {
+  Scripts.execStorage("syntax.tjs");
+  Scripts.execStorage("array_functions.tjs");
+  Scripts.execStorage("dict_functions.tjs");
+  Scripts.execStorage("arrow.tjs");
+  Scripts.execStorage("dict_shortcut.tjs");
+  Scripts.execStorage("loop.tjs");
+  Scripts.execStorage("negative_cond.tjs");
+  Scripts.execStorage("iterator.tjs");
+  Scripts.execStorage("foreach.tjs");
+} catch (e) {
+  if (e) {
+    err = e.message;
+  } else {
+    err = 'UNKNOWN ERROR';
+  }
+}
 Test.showResult();
+Debug.message(err);

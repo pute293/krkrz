@@ -988,6 +988,7 @@ static void TJSInitReservedWordsHashTable()
     TJS_REG_RES_WORD("->", T_ARROW);
 	TJS_REG_RES_WORD("finally", T_FINALLY);
 	TJS_REG_RES_WORD("false", T_FALSE);
+	TJS_REG_RES_WORD("foreach", T_FOREACH);
 	TJS_REG_RES_WORD("for", T_FOR);
 	TJS_REG_RES_WORD("loop", T_LOOP);
 	TJS_REG_RES_WORD("global", T_GLOBAL);

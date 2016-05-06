@@ -7,7 +7,7 @@ perl postbison.pl tjs.tab.c && \
 perl wrapTJSns.pl tjs.tab.h && \
 echo copying ... && \
 copy tjs.tab.c ../tjs.tab.cpp && \
-copy tjs.tab.h ../tjs.tab.h
+copy tjs.tab.h ../tjs.tab.hpp
 #echo tjspp.y :
 #perl CR.pl tjspp.y
 #bison -dv --name-prefix=pp tjspp.y

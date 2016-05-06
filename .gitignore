@@ -1,0 +1,7 @@
+Debug/
+Release/
+bin/
+src/core/vc2012
+src/core/external
+src/core/tjs2/syntax
+!src/core/tjs2/syntax/*.y
