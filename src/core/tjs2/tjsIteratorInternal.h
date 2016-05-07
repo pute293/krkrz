@@ -42,11 +42,6 @@ struct ParamList {
 	ParamList(const ParamList &o) = delete;
 	ParamList &operator=(const ParamList &o) = delete;
 	
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023026
-#define TJS_NOEXCEPT noexcept
-#else
-#define TJS_NOEXCEPT throw()
-#endif
 	// move
 	ParamList(ParamList &&o) TJS_NOEXCEPT
 		: Params(o.Params), Index(o.Index), Count(o.Count) {

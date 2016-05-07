@@ -127,6 +127,11 @@ extern void TJSNativeDebuggerBreak();
 extern void TJSSetFPUE();
 extern void TJSRestoreFPUE();
 
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER < 190023026
+#define TJS_NOEXCEPT throw()
+#else
+#define TJS_NOEXCEPT noexcept
+#endif
 
 //---------------------------------------------------------------------------
 // elapsed time profiler
