@@ -4,9 +4,9 @@ class TestForEach extends Test {
   
   var name = 'FOREACH';
   var tests = [
-    'test_foreach_array',
-    'test_foreach_dict',
-    'test_foreach_iterator'
+    'test_for_array',
+    'test_for_dict',
+    'test_for_iterator'
   ];
   
   class It extends Iterator.Lazy {
@@ -16,87 +16,87 @@ class TestForEach extends Test {
     function moveNext { x += 10; return true; }
   }
   
-  function test_foreach_array {
+  function test_for_array {
     var a = void;
     var array0 = [10, 11, 12, 13, 14, 15];
     var array1 = [];
     
-    // foreach with array identifier
-    foreach (var a in array0) array1.add(a);
-    assert_equal(a, void, 'foreach scope 1');
+    // for with array identifier
+    for (var a in array0) array1.add(a);
+    assert_equal(a, void, 'for scope 1');
     assert_equal_struct(array0, array1, 'id all iteration');
     assert_equal_struct(array0, [10,11,12,13,14,15], 'id immutabile');
     
-    // foreach with inline array
-    foreach (var a in [20, 30, 40]) array1.add(a);
-    assert_equal(a, void, 'foreach scope 2');
+    // for with inline array
+    for (var a in [20, 30, 40]) array1.add(a);
+    assert_equal(a, void, 'for scope 2');
     assert_equal_struct(array1, [10,11,12,13,14,15,20,30,40], 'inline all iteration');
     
     // check scope
-    foreach (a in [50, 60, 70]) array1.add(a);
-    assert_equal(a, 70, 'foreach scope 3');
+    for (a in [50, 60, 70]) array1.add(a);
+    assert_equal(a, 70, 'for scope 3');
     assert_equal_struct(array1, [10,11,12,13,14,15,20,30,40,50,60,70]);
   }
   
-  function test_foreach_dict {
+  function test_for_dict {
     var a = void;
     var dict0 = %[a: 10, b: 20, c: 30];
     var dict1 = %[];
     
-    // foreach with dict identifier
-    foreach (var a in dict0) dict1[a[0]] = a[1];
-    assert_equal(a, void, 'foreach scope 1');
+    // for with dict identifier
+    for (var a in dict0) dict1[a[0]] = a[1];
+    assert_equal(a, void, 'for scope 1');
     assert_equal_struct(dict0, dict1, 'id all iteration');
     assert_equal_struct(dict0, %[a: 10, b: 20, c: 30], 'id immutabile');
     
-    // foreach with inline dict
-    foreach (var a in %[c: 40, d: 50, e: 60]) dict1[a[0]] = a[1];
-    assert_equal(a, void, 'foreach scope 2');
+    // for with inline dict
+    for (var a in %[c: 40, d: 50, e: 60]) dict1[a[0]] = a[1];
+    assert_equal(a, void, 'for scope 2');
     assert_equal_struct(dict1, %[a: 10, b: 20, c: 40, d: 50, e: 60], 'inline all iteration');
     
     // check scope
-    foreach (a in %[e: 70, f: 80, g: [10, 20, 30]]) dict1[a[0]] = a[1];
-    assert(a instanceof 'Array', 'foreach scope 3');
-    assert_include(a[0], ['e', 'f', 'g'], 'foreach scope 4');
-    assert_include(a[1], [70, 80, [10,20,30]], 'foreach scope 5');
+    for (a in %[e: 70, f: 80, g: [10, 20, 30]]) dict1[a[0]] = a[1];
+    assert(a instanceof 'Array', 'for scope 3');
+    assert_include(a[0], ['e', 'f', 'g'], 'for scope 4');
+    assert_include(a[1], [70, 80, [10,20,30]], 'for scope 5');
     assert_equal_struct(dict1, %[a: 10, b: 20, c: 40, d: 50, e: 70, f: 80, g: [10,20,30]]);
   }
   
-  function test_foreach_iterator {
+  function test_for_iterator {
     var a = void;
     var x = new It();
     var y = [];
     
-    // foreach with identifier
+    // for with identifier
     var i = 0;
-    foreach (var a in x) { y.add(a); if (++i == 10) break; }
-    assert_equal(a, void, 'foreach scope 1');
+    for (var a in x) { y.add(a); if (++i == 10) break; }
+    assert_equal(a, void, 'for scope 1');
     assert_equal_struct(y, [10,20,30,40,50,60,70,80,90,100], 'id 10 iteration');
     
     i = 0;
     y.clear();
-    foreach (var a in x.map(->x[x*2])) { y.add(a); if (++i == 10) break; }
+    for (var a in x.map(->x[x*2])) { y.add(a); if (++i == 10) break; }
     assert_equal_struct(y, [220,240,260,280,300,320,340,360,380,400], 'id 10 iteration continue');
     
-    // foreach with inline dict
+    // for with inline dict
     i = 0;
     y.clear();
-    foreach (var a in new It()) { y.add(a); if (++i == 10) break; }
+    for (var a in new It()) { y.add(a); if (++i == 10) break; }
     assert_equal_struct(y, [10,20,30,40,50,60,70,80,90,100], 'inline iteration 1');
     
     y.clear();
-    foreach (var a in (new It()).take(5)) y.add(a);
-    assert_equal(a, void, 'foreach scope 2');
+    for (var a in (new It()).take(5)) y.add(a);
+    assert_equal(a, void, 'for scope 2');
     assert_equal_struct(y, [10,20,30,40,50], 'inline iteration 2');
     
     y.clear();
-    foreach (var a in (new It()).map(->x[x*3]).take(5).drop(1)) y.add(a);
+    for (var a in (new It()).map(->x[x*3]).take(5).drop(1)) y.add(a);
     assert_equal_struct(y, [60,90,120,150], 'inline iteration 3');
     
     // check scope
     y.clear();
-    foreach (a in (new It()).take(3).drop(1).map(->x[x*4])) y.add(a);
-    assert_equal(a, 120, 'foreach scope 3');
+    for (a in (new It()).take(3).drop(1).map(->x[x*4])) y.add(a);
+    assert_equal(a, 120, 'for scope 3');
     assert_equal_struct(y, [80, 120], 'inline iteration 4');
   }
   

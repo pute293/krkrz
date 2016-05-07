@@ -185,15 +185,17 @@ typedef union YYSTYPE
 {
 
 /* Line 1685 of yacc.c  */
-#line 60 "tjs.y"
+#line 59 "tjs.y"
 
 	tjs_int			num;
 	tTJSExprNode *		np;
+	tTJSVarDeclList	*	dp;
+	tTJSVarDeclList::Node *	dn;
 
 
 
 /* Line 1685 of yacc.c  */
-#line 196 "tjs.tab.h"
+#line 198 "tjs.tab.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

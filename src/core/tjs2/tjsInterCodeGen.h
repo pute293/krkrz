@@ -15,6 +15,7 @@
 #include <vector>
 #include <stack>
 #include <list>
+#include <memory>
 #include "tjsVariant.h"
 #include "tjsInterface.h"
 #include "tjsNamespace.h"
@@ -137,6 +138,42 @@ public:
 	// for array and dictionary constant value
 	void AddArrayElement(const tTJSVariant & val);
 	void AddDictionaryElement(const tTJSString & name, const tTJSVariant & val);
+};
+//---------------------------------------------------------------------------
+// tTJSDeclNodes
+//---------------------------------------------------------------------------
+class tTJSVarDeclList
+{
+public:
+	enum struct NodeType { Const, Var, NotLocal };
+	
+	struct Node
+	{
+		const tjs_char *Name;
+		tTJSExprNode *Value;
+		NodeType Type = NodeType::Var;
+		
+		Node(const tjs_char *varname, tTJSExprNode *val);
+		~Node();
+		Node(const Node&) = delete;
+		Node &operator=(const Node&) = delete;
+		Node(Node &&node) TJS_NOEXCEPT;
+		Node &operator=(Node &&node) TJS_NOEXCEPT;
+	};
+
+private:
+	typedef std::vector<Node> DeclList;
+	typedef DeclList::const_iterator iterator;
+
+	DeclList Nodes;
+
+public:
+	void Add(const tjs_char *varname, tTJSExprNode *node = nullptr);
+	void Add(Node *node);
+	void SetType(NodeType type) { for (Node &node : Nodes) node.Type = type; }
+	void SetConst() { SetType(NodeType::Const); }
+	iterator begin() const { return Nodes.cbegin(); }
+	iterator end() const { return Nodes.cend(); }
 };
 //---------------------------------------------------------------------------
 // tTJSInterCodeContext - Intermediate Code Context
@@ -492,6 +529,10 @@ public:
 	tTJSExprNode * MakeNP2(tjs_int opecode, tTJSExprNode * node1, tTJSExprNode * node2);
 	tTJSExprNode * MakeNP3(tjs_int opecode, tTJSExprNode * node1, tTJSExprNode * node2,
 		tTJSExprNode * node3);
+
+	tTJSVarDeclList * CreateVarDeclList();
+	tTJSVarDeclList::Node * GetVarDeclNode(const tjs_char * varname, tTJSExprNode * val = nullptr);
+	void DeclareVariables(tTJSVarDeclList *list);
 
 	//---------------------------------------------------------- disassembler
 	// implemented in tjsDisassemble.cpp

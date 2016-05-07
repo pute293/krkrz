@@ -171,10 +171,6 @@ class TestSyntax extends Test {
     var d = void;
     for (; c < 10; ++c) var d = c;
     assert_equal(d, void, 'for statement 2');
-    // 公式の仕様では for ( ; expr ; expr ) statement は
-    // for ( expr ; expr ; expr ) statement や for ( ; expr ; expr ) { statement } と異なる動作をする
-    // したがって以下が正しい
-    //assert_equal(d, 9, 'for statement 2');
   }
   
   function test_for_continue() {

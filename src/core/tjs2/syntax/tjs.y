@@ -13,7 +13,6 @@
 
 #include <malloc.h>
 
-
 #include "tjsInterCodeGen.h"
 #include "tjsScriptBlock.h"
 #include "tjsError.h"
@@ -60,6 +59,8 @@ int __yyerror(char * msg, void *pm);
 %union{
 	tjs_int			num;
 	tTJSExprNode *		np;
+	tTJSVarDeclList	*	dp;
+	tTJSVarDeclList::Node *	dn;
 }
 
 
@@ -214,6 +215,12 @@ int __yyerror(char * msg, void *pm);
 	func_expr_def arrow_expr_def func_call_expr expr_no_comma inline_array array_elm inline_dic dic_elm
 	const_inline_array const_inline_dic forin_decl
 
+%type <dp>
+	variable_def variable_def_inner variable_id_list
+
+%type <dn>
+	variable_id
+
 %%
 
 
@@ -260,7 +267,7 @@ statement
 	| "break" ";"							{ cc->DoBreak(); }
 	| "continue" ";"						{ cc->DoContinue(); }
 	| "debugger" ";"						{ cc->DoDebugger(); }
-	| variable_def
+	| variable_def							{ cc->DeclareVariables($1); }
 	| func_def
 	| property_def
 	| class_def
@@ -330,6 +337,44 @@ do_while
 	  ";"									{ cc->ExitDoWhileCode(); }
 ;
 
+/* # a simple loop
+ * ## syntax
+ *     loop { ... }
+ *     loop (expr) { ... }
+ * ## semantics
+ * syntactic sugar of code:
+ *     for (;;) { ... }
+ *     for (var $1 = (int)expr; 0 < $1; --$1) { ... }
+ */
+loop
+	: loop_init block							{ cc->ExitForCode(); }
+	| loop_init	expr							{ tjs_char *temp = cc->GetTemporaryVariableName();
+												  { // var $1 = (int)expr
+												    cc->InitLocalVariable(temp, cc->MakeNP1(T_INT, $2));
+												  }
+												  { // 0 < $1
+												    auto zero = cc->MakeNP0(T_CONSTVAL);
+												    zero->SetValue(tTJSVariant(tTVInteger(0)));
+												    auto rhs = cc->MakeNP0(T_SYMBOL);
+												    rhs->SetValue(tTJSVariant(temp));
+												    cc->CreateForExprCode(cc->MakeNP2(T_LT, zero, rhs));
+												  }
+												  { // --$1
+												    auto t1 = cc->MakeNP0(T_SYMBOL);
+												    t1->SetValue(tTJSVariant(temp));
+												    cc->SetForThirdExprCode(cc->MakeNP1(T_DECREMENT, t1));
+												  }
+												  delete[] temp;
+												}
+	 block										{ cc->ExitForCode(); }
+;
+
+loop_init
+	: "loop"									{ cc->EnterForCode();
+												  cc->CreateForExprCode(NULL);
+												  cc->SetForThirdExprCode(NULL); }
+;
+
 /* an if statement */
 if
 	: "if" "("								{ cc->EnterIfCode(); }
@@ -373,18 +418,26 @@ if_else
  *     }
  */
 for
-	: "for" "("								{ cc->EnterForCode(); }
+	: for_head
 	  for_first_clause ";"
 	  for_second_clause ";"
 	  for_third_clause ")"
-	  block_or_statement					{ cc->ExitForCode(); }
+	  block_or_statement
+	  for_tail
 ;
 
+for_head
+	: "for" "("								{ cc->EnterForCode(); }
+;
+
+for_tail
+	: 										{ cc->ExitForCode(); }
+;
 
 /* the first clause of a for statement */
 for_first_clause
 	: /* empty */
-	| variable_def_inner
+	| variable_def_inner					{ cc->DeclareVariables($1); }
 	| expr									{ cc->CreateExprCode($1); }
 ;
 
@@ -420,7 +473,7 @@ for_third_clause
  * where $1 is a compiler generated temporary variable
  */
 forin
-	: "foreach" "("							{ cc->EnterForCode(); }
+	: for_head
 	  forin_decl "in" expr ")"				{ tjs_char *temp = cc->GetTemporaryVariableName();
 	  											  { // var $1 = Iterator.from(expr);
 	  											    // [1] Iterator.from
@@ -430,7 +483,7 @@ forin
 	  											    from->SetValue(tTJSVariant("from"));
 	  											    auto caller = cc->MakeNP2(T_DOT, iter, from);
 	  											    // [2] [1](expr)
-	  											    auto arg = cc->MakeNP1(T_ARG, $6);
+	  											    auto arg = cc->MakeNP1(T_ARG, $4);
 	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
 	  											    // [3] var $1 = [2]
 	  											    cc->InitLocalVariable(temp, call);
@@ -459,86 +512,53 @@ forin
 	  											    auto arg = cc->MakeNP1(T_ARG, nullptr);
 	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
 	  											    // [3] $$$ id = [2]
-	  											    cc->CreateExprCode(cc->MakeNP2(T_EQUAL, $4, call));
+	  											    cc->CreateExprCode(cc->MakeNP2(T_EQUAL, $2, call));
 	  											  }
 	  											  delete[] temp;
 	  											}
-	  block_or_statement						{ cc->ExitForCode(); }
+	  block_or_statement
+	  for_tail
 ;
 
 forin_decl
-	: "var" T_SYMBOL variable_type				{ $$ = cc->MakeNP0(T_SYMBOL); 
-												  $$->SetValue(lx->GetString($2));
-												  cc->AddLocalVariable(lx->GetString($2)); }
-	| "const" T_SYMBOL variable_type			{ $$ = cc->MakeNP0(T_SYMBOL); 
-												  $$->SetValue(lx->GetString($2));
-												  cc->AddLocalVariable(lx->GetString($2)); }
-	| T_SYMBOL variable_type					{ $$ = cc->MakeNP0(T_SYMBOL);
-												  $$->SetValue(lx->GetString($1)); }
-;
-
-/* # a while loop
- * ## syntax
- *     loop { ... }
- *     loop (expr) { ... }
- * ## semantics
- * syntactic sugar of code:
- *     for (;;) { ... }
- *     for (var $1 = (int)expr; 0 < $1; --$1) { ... }
- */
-loop
-	: loop_init block							{ cc->ExitForCode(); }
-	| loop_init	expr							{ tjs_char *temp = cc->GetTemporaryVariableName();
-												  { // var $1 = (int)expr
-												    cc->InitLocalVariable(temp, cc->MakeNP1(T_INT, $2));
-												  }
-												  { // 0 < $1
-												    auto zero = cc->MakeNP0(T_CONSTVAL);
-												    zero->SetValue(tTJSVariant(tTVInteger(0)));
-												    auto rhs = cc->MakeNP0(T_SYMBOL);
-												    rhs->SetValue(tTJSVariant(temp));
-												    cc->CreateForExprCode(cc->MakeNP2(T_LT, zero, rhs));
-												  }
-												  { // --$1
-												    auto t1 = cc->MakeNP0(T_SYMBOL);
-												    t1->SetValue(tTJSVariant(temp));
-												    cc->SetForThirdExprCode(cc->MakeNP1(T_DECREMENT, t1));
-												  }
-												  delete[] temp;
-												}
-	 block										{ cc->ExitForCode(); }
-;
-
-loop_init
-	: "loop"									{ cc->EnterForCode();
-												  cc->CreateForExprCode(NULL);
-												  cc->SetForThirdExprCode(NULL); }
+	: "var" T_SYMBOL variable_type			{ $$ = cc->MakeNP0(T_SYMBOL); 
+											  $$->SetValue(lx->GetString($2));
+											  cc->AddLocalVariable(lx->GetString($2)); }
+	| "const" T_SYMBOL variable_type		{ $$ = cc->MakeNP0(T_SYMBOL); 
+											  $$->SetValue(lx->GetString($2));
+											  cc->AddLocalVariable(lx->GetString($2)); }
+	| T_SYMBOL variable_type				{ $$ = cc->MakeNP0(T_SYMBOL);
+											  $$->SetValue(lx->GetString($1)); }
 ;
 
 /* variable definition */
 variable_def
-	: variable_def_inner ";"
+	: variable_def_inner ";"				{ $$ = $1; }
 ;
 
 variable_def_inner
-	: "var" variable_id_list
-	| "const" variable_id_list
+	: "var" variable_id_list				{ $$ = $2; }
+	| "const" variable_id_list				{ $$ = $2; $$->SetConst(); }
 		/* const: note that current version does not
 		   actually disallow re-assigning new value */
 ;
 
 /* list for the variable definition */
 variable_id_list
-	: variable_id
-	| variable_id_list "," variable_id
+	: variable_id							{ $$ = cc->CreateVarDeclList(); $$->Add($1); }
+	| variable_id_list "," variable_id		{ $$ = $1; $$->Add($3); }
 ;
 
 /* a variable id and an optional initializer expression */
 variable_id
-	: T_SYMBOL variable_type				{ cc->AddLocalVariable(
+/*	: T_SYMBOL variable_type				{ cc->AddLocalVariable(
 												lx->GetString($1)); }
 	| T_SYMBOL variable_type "=" expr_no_comma	{ cc->InitLocalVariable(
 											  lx->GetString($1), $4); }
+*/
+	: T_SYMBOL variable_type				{ $$ = cc->GetVarDeclNode(lx->GetString($1)); }
+	| T_SYMBOL variable_type "="
+	  expr_no_comma							{ $$ = cc->GetVarDeclNode(lx->GetString($1), $4); }
 ;
 
 /* a variable type. It is not currently effect. Ignore types. */

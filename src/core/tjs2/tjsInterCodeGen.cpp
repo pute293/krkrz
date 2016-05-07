@@ -169,6 +169,57 @@ void tTJSExprNode::AddDictionaryElement(const tTJSString & name, const tTJSVaria
 
 
 //---------------------------------------------------------------------------
+// tTJSDeclNodes -- class represents variable declaration
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+void tTJSVarDeclList::Add(const tjs_char *varname, tTJSExprNode *node)
+{
+	Nodes.emplace_back(varname, node);
+}
+//---------------------------------------------------------------------------
+void tTJSVarDeclList::Add(tTJSVarDeclList::Node *node)
+{
+	Nodes.push_back(std::move(*node));
+	delete node;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList::Node::Node(const tjs_char *varname, tTJSExprNode *val)
+	: Value(val)
+{
+	tjs_char *name = new tjs_char[TJS_strlen(varname)+1];
+	TJS_strcpy(name, varname);
+	Name = name;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList::Node::~Node()
+{
+	delete[] Name;
+	/* must not delete `Value` */
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList::Node::Node(Node &&node) TJS_NOEXCEPT
+	: Name(node.Name), Value(node.Value), Type(node.Type)
+{
+	node.Name = nullptr;
+	node.Value = nullptr;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList::Node &
+tTJSVarDeclList::Node::operator=(Node &&node) TJS_NOEXCEPT
+{
+	if (this == &node) return *this;
+	Name = node.Name;
+	Value = node.Value;
+	Type = node.Type;
+	node.Name = nullptr;
+	node.Value = nullptr;
+	return *this;
+}
+//---------------------------------------------------------------------------
+
+
+
+//---------------------------------------------------------------------------
 // tTJSInterCodeContext -- intermediate context
 //---------------------------------------------------------------------------
 static tjs_int TJSGetContextHashSize(tTJSContextType type)
@@ -3854,6 +3905,28 @@ tTJSExprNode * tTJSInterCodeContext::MakeNP3(tjs_int opecode, tTJSExprNode * nod
 	n->Add(node2);
 	n->Add(node3);
 	return n;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList * tTJSInterCodeContext::CreateVarDeclList()
+{
+	return new tTJSVarDeclList();
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList::Node *
+tTJSInterCodeContext::GetVarDeclNode(const tjs_char * varname, tTJSExprNode * val)
+{
+	return new tTJSVarDeclList::Node(varname, val);
+}
+//---------------------------------------------------------------------------
+void tTJSInterCodeContext::DeclareVariables(tTJSVarDeclList *list)
+{
+	for (const auto &node : *list) {
+		if (node.Value)
+			InitLocalVariable(node.Name, node.Value);
+		else
+			AddLocalVariable(node.Name);
+	}
+	delete list;
 }
 //---------------------------------------------------------------------------
 
