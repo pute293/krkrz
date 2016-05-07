@@ -168,10 +168,18 @@ private:
 	DeclList Nodes;
 
 public:
-	void Add(const tjs_char *varname, tTJSExprNode *node = nullptr);
-	void Add(Node *node);
+	tTJSVarDeclList() = default;
+	tTJSVarDeclList(const tTJSVarDeclList&) = delete;
+	tTJSVarDeclList &operator=(const tTJSVarDeclList&) = delete;
+	size_t Count() { return Nodes.size(); }
+	Node *Get(size_t idx) { return &Nodes[idx]; }
+	Node *operator[](size_t idx) { return &Nodes[idx]; }
+	void Push(const tjs_char *varname, tTJSExprNode *node = nullptr);
+	void Push(Node *node);
+	void Pop() { Nodes.pop_back(); }
 	void SetType(NodeType type) { for (Node &node : Nodes) node.Type = type; }
 	void SetConst() { SetType(NodeType::Const); }
+	void SetNotLocal() { SetType(NodeType::NotLocal); }
 	iterator begin() const { return Nodes.cbegin(); }
 	iterator end() const { return Nodes.cend(); }
 };
@@ -464,8 +472,6 @@ public:
 	void InitLocalVariable(const tjs_char *name, tTJSExprNode *node);
 	void InitLocalFunction(const tjs_char *name, tjs_int data);
 
-	tjs_char *tTJSInterCodeContext::GetTemporaryVariableName(void);
-
 	void CreateExprCode(tTJSExprNode *node);
 
 	void EnterDoWhileCode(void);
@@ -482,6 +488,8 @@ public:
 	void CreateForExprCode(tTJSExprNode *node);
 	void SetForThirdExprCode(tTJSExprNode *node);
 	void ExitForCode();
+
+	void InitForIn(tTJSVarDeclList *vars, tTJSExprNode *expr);
 
 	void EnterSwitchCode(tTJSExprNode *node);
 	void ExitSwitchCode();
@@ -533,6 +541,8 @@ public:
 	tTJSVarDeclList * CreateVarDeclList();
 	tTJSVarDeclList::Node * GetVarDeclNode(const tjs_char * varname, tTJSExprNode * val = nullptr);
 	void DeclareVariables(tTJSVarDeclList *list);
+
+	tjs_char *GetTemporaryVariableName(const tTJSVarDeclList *vars = nullptr);
 
 	//---------------------------------------------------------- disassembler
 	// implemented in tjsDisassemble.cpp

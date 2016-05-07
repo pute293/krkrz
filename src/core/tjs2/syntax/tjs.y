@@ -213,10 +213,10 @@ int __yyerror(char * msg, void *pm);
 	compare_expr shift_expr add_sub_expr mul_div_expr mul_div_expr_and_asterisk
 	unary_expr incontextof_expr priority_expr factor_expr call_arg call_arg_list
 	func_expr_def arrow_expr_def func_call_expr expr_no_comma inline_array array_elm inline_dic dic_elm
-	const_inline_array const_inline_dic forin_decl
+	const_inline_array const_inline_dic
 
 %type <dp>
-	variable_def variable_def_inner variable_id_list
+	for_first_clause forin_decl variable_def variable_def_inner variable_id_list
 
 %type <dn>
 	variable_id
@@ -419,7 +419,7 @@ if_else
  */
 for
 	: for_head
-	  for_first_clause ";"
+	  for_first_clause ";"					{ if ($2) cc->DeclareVariables($2); }
 	  for_second_clause ";"
 	  for_third_clause ")"
 	  block_or_statement
@@ -436,9 +436,9 @@ for_tail
 
 /* the first clause of a for statement */
 for_first_clause
-	: /* empty */
-	| variable_def_inner					{ cc->DeclareVariables($1); }
-	| expr									{ cc->CreateExprCode($1); }
+	: /* empty */							{ $$ = nullptr; }
+	| variable_def_inner					{ $$ = $1; }
+	| expr									{ $$ = nullptr; cc->CreateExprCode($1); }
 ;
 
 /* the second clause of a for statement */
@@ -474,61 +474,24 @@ for_third_clause
  */
 forin
 	: for_head
-	  forin_decl "in" expr ")"				{ tjs_char *temp = cc->GetTemporaryVariableName();
-	  											  { // var $1 = Iterator.from(expr);
-	  											    // [1] Iterator.from
-	  											    auto iter = cc->MakeNP0(T_SYMBOL);
-	  											    auto from = cc->MakeNP0(T_SYMBOL);
-	  											    iter->SetValue(tTJSVariant("Iterator"));
-	  											    from->SetValue(tTJSVariant("from"));
-	  											    auto caller = cc->MakeNP2(T_DOT, iter, from);
-	  											    // [2] [1](expr)
-	  											    auto arg = cc->MakeNP1(T_ARG, $4);
-	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
-	  											    // [3] var $1 = [2]
-	  											    cc->InitLocalVariable(temp, call);
-	  											  }
-	  											  { // $1.moveNext();
-	  											    // [1] $1.moveNext
-	  											    auto t1 = cc->MakeNP0(T_SYMBOL);
-	  											    auto next = cc->MakeNP0(T_SYMBOL);
-	  											    t1->SetValue(tTJSVariant(temp));
-	  											    next->SetValue(tTJSVariant("moveNext"));
-	  											    auto caller = cc->MakeNP2(T_DOT, t1, next);
-	  											    // [2] [1]()
-	  											    auto arg = cc->MakeNP1(T_ARG, nullptr);
-	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
-	  											    cc->CreateForExprCode(call);
-	  											  }
-	  											  cc->SetForThirdExprCode(nullptr);
-	  											  { // $$$ id = $1.current();
-	  											    // [1] $1.current
-	  											    auto t1 = cc->MakeNP0(T_SYMBOL);
-	  											    auto cur = cc->MakeNP0(T_SYMBOL);
-	  											    t1->SetValue(tTJSVariant(temp));
-	  											    cur->SetValue(tTJSVariant("current"));
-	  											    auto caller = cc->MakeNP2(T_DOT, t1, cur);
-	  											    // [2] [1]()
-	  											    auto arg = cc->MakeNP1(T_ARG, nullptr);
-	  											    auto call = cc->MakeNP2(T_LPARENTHESIS, caller, arg);
-	  											    // [3] $$$ id = [2]
-	  											    cc->CreateExprCode(cc->MakeNP2(T_EQUAL, $2, call));
-	  											  }
-	  											  delete[] temp;
-	  											}
+	  forin_decl "in" expr ")"				{ if ($2->Count() == 0) { YYABORT; }
+											  cc->InitForIn($2, $4); }
 	  block_or_statement
 	  for_tail
 ;
 
 forin_decl
-	: "var" T_SYMBOL variable_type			{ $$ = cc->MakeNP0(T_SYMBOL); 
-											  $$->SetValue(lx->GetString($2));
-											  cc->AddLocalVariable(lx->GetString($2)); }
-	| "const" T_SYMBOL variable_type		{ $$ = cc->MakeNP0(T_SYMBOL); 
-											  $$->SetValue(lx->GetString($2));
-											  cc->AddLocalVariable(lx->GetString($2)); }
-	| T_SYMBOL variable_type				{ $$ = cc->MakeNP0(T_SYMBOL);
-											  $$->SetValue(lx->GetString($1)); }
+/*	: variable_def_inner					{ $$ = $1; }
+	| variable_id_list						{ $$ = $1; $$->SetNotLocal(); }
+*/
+	: "var" T_SYMBOL variable_type			{ $$ = cc->CreateVarDeclList(); 
+											  $$->Push(cc->GetVarDeclNode(lx->GetString($2))); }
+	| "const" T_SYMBOL variable_type		{ $$ = cc->CreateVarDeclList(); 
+											  $$->Push(cc->GetVarDeclNode(lx->GetString($2)));
+											  $$->SetConst(); }
+	| T_SYMBOL variable_type				{ $$ = cc->CreateVarDeclList(); 
+											  $$->Push(cc->GetVarDeclNode(lx->GetString($1)));
+											  $$->SetNotLocal(); }
 ;
 
 /* variable definition */
@@ -545,8 +508,8 @@ variable_def_inner
 
 /* list for the variable definition */
 variable_id_list
-	: variable_id							{ $$ = cc->CreateVarDeclList(); $$->Add($1); }
-	| variable_id_list "," variable_id		{ $$ = $1; $$->Add($3); }
+	: variable_id							{ $$ = cc->CreateVarDeclList(); $$->Push($1); }
+	| variable_id_list "," variable_id		{ $$ = $1; $$->Push($3); }
 ;
 
 /* a variable id and an optional initializer expression */

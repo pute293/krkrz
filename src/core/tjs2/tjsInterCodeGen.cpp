@@ -172,12 +172,12 @@ void tTJSExprNode::AddDictionaryElement(const tTJSString & name, const tTJSVaria
 // tTJSDeclNodes -- class represents variable declaration
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-void tTJSVarDeclList::Add(const tjs_char *varname, tTJSExprNode *node)
+void tTJSVarDeclList::Push(const tjs_char *varname, tTJSExprNode *node)
 {
 	Nodes.emplace_back(varname, node);
 }
 //---------------------------------------------------------------------------
-void tTJSVarDeclList::Add(tTJSVarDeclList::Node *node)
+void tTJSVarDeclList::Push(tTJSVarDeclList::Node *node)
 {
 	Nodes.push_back(std::move(*node));
 	delete node;
@@ -2755,32 +2755,6 @@ void tTJSInterCodeContext::AddLocalVariable(const tjs_char *name, tjs_int init)
 	}
 }
 //---------------------------------------------------------------------------
-tjs_char *tTJSInterCodeContext::GetTemporaryVariableName(void)
-{
-		// returns the variable name which is not defined in this Namespace
-		// NB this method only returns a variable name, NOT create it
-		
-		size_t len = 16;
-		tjs_char *name;
-		
-		while (true) {
-			name = new tjs_char[len];
-			std::memset(name, 0, sizeof(tjs_char) * len);
-			
-			size_t i = 0;
-			while (i < len) {
-				name[i++] = 1;
-				if (Namespace.Find(name) == -1) {
-					return name;
-				}
-			}
-			
-			// all searched names were already defined
-			len *= 2;
-			delete[] name;
-		}
-}
-//---------------------------------------------------------------------------
 void tTJSInterCodeContext::InitLocalVariable(const tjs_char *name, tTJSExprNode *node)
 {
 	// create a local variable named "name", with inial value of the
@@ -3032,6 +3006,88 @@ void tTJSInterCodeContext::ExitForCode()
 	ExitBlock();
 	DoNestTopExitPatch();
 	NestVector.pop_back();
+}
+//---------------------------------------------------------------------------
+void tTJSInterCodeContext::InitForIn(tTJSVarDeclList *vars, tTJSExprNode *expr)
+{
+	// create initialization and condition codes for "for-in" statement
+	// syntax: for ( $$$ `vars` in `expr` ) block_or_statement
+	// is syntactic sugar of:
+	// 1  for ( var $1 = Iterator.from(`expr`) ; $1.moveNext() ; ) {
+	// 2    const $2 = $1.current();
+	// 3    $$$ `vars[0]` = $2[0];
+	// 4    $$$ `vars[1]` = $2[1];
+	// 5    ...
+	// 6    $$$ `vars[n]` = $2[n];
+	// 7    
+	// 8    block_or_statement
+	// 9  }
+	// here we process line 1..6
+	
+	tjs_char *t1 = GetTemporaryVariableName(vars);  // $1
+	vars->Push(t1);
+	tjs_char *t2 = GetTemporaryVariableName(vars);  // $2
+	vars->Pop();
+	
+	#define TJS_FORIN_MAKE_SYMBOL(varname, value) \
+	tTJSExprNode *varname = MakeNP0(T_SYMBOL); \
+	{ varname->SetValue(tTJSVariant(value)); }
+	#define TJS_FORIN_FUNC_CALL(obj, method, args) \
+	MakeNP2(T_LPARENTHESIS, MakeNP2(T_DOT, obj, method), args)
+	#define TJS_FORIN_FUNC_CALL0(obj, method) \
+	TJS_FORIN_FUNC_CALL(obj, method, MakeNP1(T_ARG, nullptr))
+	
+	// initialization code
+	{   // var $1 = Iterator.from(expr);
+		// [1] Iterator.from
+		TJS_FORIN_MAKE_SYMBOL(iter, "Iterator");
+		TJS_FORIN_MAKE_SYMBOL(from, "from");
+		// [2] var $1 = [1](expr)
+		auto arg = MakeNP1(T_ARG, expr);
+		InitLocalVariable(t1, TJS_FORIN_FUNC_CALL(iter, from, arg));
+	}
+	
+	// condition code
+	{	// $1.moveNext();
+		TJS_FORIN_MAKE_SYMBOL(d1, t1);
+		TJS_FORIN_MAKE_SYMBOL(next, "moveNext");
+		CreateForExprCode(TJS_FORIN_FUNC_CALL0(d1, next));
+	}
+	
+	// afterthought code
+	// do nothing
+	SetForThirdExprCode(nullptr); // create codes about jump
+	
+	// initialization codes for beginning of loop
+	// TODO: In current version the for-in statement supports
+	//         only one variable binds
+	//         (i.e. unpack-assign (in python) is not supported yet).
+	//       In current implementation, elements will be assigned to
+	//         first declared variable and rest vars are assigned to `void`
+	//         if it does not have initialization expression.
+	{	// const $2 = $1.current();
+		TJS_FORIN_MAKE_SYMBOL(d1, t1);
+		TJS_FORIN_MAKE_SYMBOL(d2, t2);
+		TJS_FORIN_MAKE_SYMBOL(cur, "current");
+		InitLocalVariable(t2, TJS_FORIN_FUNC_CALL0(d1, cur));
+		
+		// what we want:
+		//   $$$ (vars[0], vars[1], ..., vars[n]) = $2
+		// what we get:
+		//   $$$ vars[0] = $2;
+		//   $$$ vars[1](=...), vars[2](=...), ..., vars[n](=...);
+		auto first = vars->Get(0);
+		// need delete first.Value ???
+		first->Value = d2;
+		
+		DeclareVariables(vars);
+	}
+	
+	#undef TJS_FORIN_FUNC_CALL
+	#undef TJS_FORIN_MAKE_SYMBOL
+	
+	delete[] t1;
+	delete[] t2;
 }
 //---------------------------------------------------------------------------
 void tTJSInterCodeContext::EnterSwitchCode(tTJSExprNode *node)
@@ -3921,12 +3977,59 @@ tTJSInterCodeContext::GetVarDeclNode(const tjs_char * varname, tTJSExprNode * va
 void tTJSInterCodeContext::DeclareVariables(tTJSVarDeclList *list)
 {
 	for (const auto &node : *list) {
-		if (node.Value)
-			InitLocalVariable(node.Name, node.Value);
-		else
-			AddLocalVariable(node.Name);
+		switch (node.Type) {
+		case tTJSVarDeclList::NodeType::Var:   /* fall through */
+		case tTJSVarDeclList::NodeType::Const:
+			if (node.Value) {
+				InitLocalVariable(node.Name, node.Value);
+			} else {
+				AddLocalVariable(node.Name);
+			}
+			break;
+		case tTJSVarDeclList::NodeType::NotLocal:
+			if (node.Value) {
+				tTJSExprNode *name = MakeNP0(T_SYMBOL);
+				name->SetValue(tTJSVariant(node.Name));
+				CreateExprCode(MakeNP2(T_EQUAL, name, node.Value));
+			}
+		}
 	}
+	
 	delete list;
+}
+//---------------------------------------------------------------------------
+tjs_char *
+tTJSInterCodeContext::GetTemporaryVariableName(const tTJSVarDeclList *vars)
+{
+		// returns the variable name which is not defined in this Namespace
+		// NB this method only returns a variable name, NOT create it
+		
+		size_t len = 16;
+		tjs_char *name;
+		
+		while (true) {
+			name = new tjs_char[len];
+			std::memset(name, 0, sizeof(tjs_char) * len);
+			
+			size_t i = 0;
+			while (i < len) {
+				name[i++] = 1;
+				if (Namespace.Find(name) == -1) {
+					if (!vars) return name;
+					bool ok = true;
+					for (const auto &var : *vars) {
+						if (TJS_stricmp(var.Name, name)) continue;
+						ok = false;
+						break;
+					}
+					if (ok) return name;
+				}
+			}
+			
+			// all searched names were already defined
+			len *= 2;
+			delete[] name;
+		}
 }
 //---------------------------------------------------------------------------
 
