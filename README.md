@@ -1,4 +1,6 @@
 # TJS 拡張
+- `for-in` 構文
+  - `for (var item in [10,20,30]) { ... }`
 - 組み込みクラスへのネイティブメソッドの追加（特に高階関数）
   - `Array.each`, `Array.map`, `Array.filter`, `Array.reduce`
   - `Dictionary.each`, `Dictionary.keys`, `Dictionary.values`
@@ -37,22 +39,66 @@
     f(10, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     // => 450
     
+    // dictionary shortcut notation
     var dict0 = %[ 'a' => 1, 'b' => [10,20,30] ];
     var dict1 = %[ 'b' => 2, 'c' => 3 ];
     dict1->assign(dict0, false);
     var keys = dict1->keys();
     // ['a', 'c', 'b']
+    
+    
+    /* ----------------------------------------------------
+     * for-in and Iterator
+     * ---------------------------------------------------- */
+    // 1. array iteration
+    for (var item in twiced_array) Debug.message(item);
+    // => 0, 2, 4, 6, 8, 10, 12, 14, 16, 18
+    
+    // 2. dictionary iteration
+    for (var pair in dict0) {
+      // pair[0] is key
+      // pair[1] is value
+      // actually I want this syntax: for (var key, value in dict) { ... }
+    }
+    
+    // 3. user-defined object iteration
+    class It extends Iterator.Lazy {
+      // infinite list of [ 10, 20, 30, ... ]
+      var x = 0;
+      function It { super.Lazy(); }
+      function current { return x; }
+      function moveNext { x += 10; return true; }
+    }
+    for (var item in new It()) {
+      // loop with infinite list
+      if (100 < item) break;
+    }
+    var iter = new It();
+    for (var item in iter.map(->x[x*3]).take(5).drop(1))
+      Debug.message(item);
+    // => 60, 90, 120, 150
+    
+    loop (10) {
+      // loop 10 times
+    }
+    
 
 # TODO
-- 「列挙可能なオブジェクト」
-  - yield
-  - native Enumerable class
-    - python, ruby, javascript 風のどれか、あるいは混ぜたもの
 - ローカル変数を捕捉するクロージャ
 - 配列の内包表記
 - 文字列配列の省略表記
 - `Iterator` への便利メソッドの追加
 - コンストラクタを省略したとき自動で親クラスのコンストラクタを呼び出すようにする
+- unpack 代入
+- `loop` 文でループ回数がとれるようにしたい
+  - `loop (var i : 10) { ... }` みたいな
+- 例外の階層化、`catch` で例外のクラスごとに分岐
+- パーサが直接 VM コードを生成するのでなく、いったん AST を作るようにする
+  - LLVM の TJS front-end / back-end
+- 文法について
+  - python みたいに `1 < x < 5` と書きたい
+  - `invalidate` をまとめて指定したい。`delete` も。
+
 
 ---
 以下、krkrz のライセンス表記
