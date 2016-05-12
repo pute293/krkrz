@@ -171,10 +171,14 @@ namespace TJS {
      T_WITHDOT = 387,
      T_THIS_PROXY = 388,
      T_WITHDOT_PROXY = 389,
-     T_CONSTVAL = 390,
-     T_SYMBOL = 391,
-     T_REGEXP = 392,
-     T_VARIANT = 393
+     T_ITERATOR = 390,
+     T_ITERNEXT = 391,
+     T_ITERCURRENT = 392,
+     T_ARRAYCOMP = 393,
+     T_CONSTVAL = 394,
+     T_SYMBOL = 395,
+     T_REGEXP = 396,
+     T_VARIANT = 397
    };
 #endif
 
@@ -185,17 +189,18 @@ typedef union YYSTYPE
 {
 
 /* Line 1685 of yacc.c  */
-#line 59 "tjs.y"
+#line 60 "tjs.y"
 
 	tjs_int			num;
 	tTJSExprNode *		np;
 	tTJSVarDeclList	*	dp;
 	tTJSVarDeclList::Node *	dn;
+//	tTJSListCompExpr *	lp;
 
 
 
 /* Line 1685 of yacc.c  */
-#line 198 "tjs.tab.hpp"
+#line 203 "tjs.tab.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

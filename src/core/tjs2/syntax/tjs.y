@@ -54,6 +54,7 @@ int __yyerror(char * msg, void *pm);
 
 %pure_parser
 
+/* `if-else`(1), `catch`(1), arrow(1) */
 %expect 3
 
 %union{
@@ -61,6 +62,7 @@ int __yyerror(char * msg, void *pm);
 	tTJSExprNode *		np;
 	tTJSVarDeclList	*	dp;
 	tTJSVarDeclList::Node *	dn;
+//	tTJSListCompExpr *	lp;
 }
 
 
@@ -200,6 +202,10 @@ int __yyerror(char * msg, void *pm);
 
 	T_THIS_PROXY
 	T_WITHDOT_PROXY
+	T_ITERATOR
+	T_ITERNEXT
+	T_ITERCURRENT
+	T_ARRAYCOMP
 
 %token <num>		T_CONSTVAL
 %token <num>		T_SYMBOL
@@ -214,12 +220,16 @@ int __yyerror(char * msg, void *pm);
 	unary_expr incontextof_expr priority_expr factor_expr call_arg call_arg_list
 	func_expr_def arrow_expr_def func_call_expr expr_no_comma inline_array array_elm inline_dic dic_elm
 	const_inline_array const_inline_dic
+	array_comp
 
 %type <dp>
 	for_first_clause forin_decl variable_def variable_def_inner variable_id_list
 
 %type <dn>
 	variable_id
+
+//%type <lp>
+//	array_comp
 
 %%
 
@@ -475,8 +485,8 @@ for_third_clause
 forin
 	: for_head
 	  forin_decl "in" expr ")"				{ if ($2->Count() == 0) { YYABORT; }
-											  cc->InitForIn($2, $4); }
-	  block_or_statement
+											  cc->EnterForInCode($2, $4); }
+	  block_or_statement					{ cc->ExitForInCode(); }
 	  for_tail
 ;
 
@@ -968,14 +978,43 @@ inline_array
 
 /* an inline array's element list */
 array_elm_list
+	: array_ext
+	| array_comp						/*{ cc->CreateCompArray($1, cn); }*/
+										{ cn->Add($1); }
+;
+
+array_ext
 	: array_elm							{ cn->Add($1); }
-	| array_elm_list "," array_elm		{ cn->Add($3); }
+	| array_ext "," array_elm			{ cn->Add($3); }
 ;
 
 /* an inline array's element */
 array_elm
 	: /* empty */						{ $$ = cc->MakeNP1(T_ARRAYARG, NULL); }
 	| expr_no_comma						{ $$ = cc->MakeNP1(T_ARRAYARG, $1); }
+;
+
+/* array comprehension expression */
+array_comp
+	: expr_no_comma "for" T_SYMBOL "in" expr_no_comma
+										{ $$ = cc->MakeNP2(T_ARRAYCOMP, cn, $1);
+										  auto var = cc->MakeNP0(T_SYMBOL);
+										  var->SetValue(tTJSVariant(lx->GetString($3)));
+										  $$->Add(cc->MakeNP2(T_IN, var, $5)); }
+	| array_comp "for" T_SYMBOL "in" expr_no_comma
+										{ $$ = $1;
+										  auto var = cc->MakeNP0(T_SYMBOL);
+										  var->SetValue(tTJSVariant(lx->GetString($3)));
+										  $$->Add(cc->MakeNP2(T_IN, var, $5)); }
+	| array_comp ","   T_SYMBOL "in" expr_no_comma
+										{ $$ = $1;
+										  auto var = cc->MakeNP0(T_SYMBOL);
+										  var->SetValue(tTJSVariant(lx->GetString($3)));
+										  $$->Add(cc->MakeNP2(T_IN, var, $5)); }
+	| array_comp "," expr_no_comma		{ $$ = $1;
+										  $$->Add(cc->MakeNP1(T_IF, $3)); }
+	| array_comp "if" expr_no_comma		{ $$ = $1;
+										  $$->Add(cc->MakeNP1(T_IF, $3)); }
 ;
 
 /* an inline dictionary */

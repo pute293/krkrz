@@ -151,9 +151,11 @@ public:
 	{
 		const tjs_char *Name;
 		tTJSExprNode *Value;
+		tjs_int ResAddr;
 		NodeType Type = NodeType::Var;
 		
 		Node(const tjs_char *varname, tTJSExprNode *val);
+		Node(const tjs_char *varname, tjs_int resaddr);
 		~Node();
 		Node(const Node&) = delete;
 		Node &operator=(const Node&) = delete;
@@ -180,6 +182,53 @@ public:
 	void SetType(NodeType type) { for (Node &node : Nodes) node.Type = type; }
 	void SetConst() { SetType(NodeType::Const); }
 	void SetNotLocal() { SetType(NodeType::NotLocal); }
+	iterator begin() const { return Nodes.cbegin(); }
+	iterator end() const { return Nodes.cend(); }
+};
+//---------------------------------------------------------------------------
+// tTJSListCompExpr
+//---------------------------------------------------------------------------
+class tTJSListCompExpr
+{
+	tTJSExprNode *Expr;
+	struct Node {
+		const tjs_char *VarName;
+		tTJSExprNode *Expr;
+		Node(tTJSExprNode *expr, const tjs_char *varname = nullptr)
+			: Expr(expr)
+		{
+			if (varname) {
+				tjs_char *name = new tjs_char[TJS_strlen(varname) + 1];
+				TJS_strcpy(name, varname);
+				VarName = name;
+			} else { VarName = nullptr; }
+		}
+		~Node() { delete[] VarName; }
+		Node(const Node&) = delete;
+		Node &operator=(const Node&) = delete;
+		Node(Node &&node) TJS_NOEXCEPT : VarName(node.VarName), Expr(node.Expr) {
+			if (this != &node) node.VarName = nullptr;
+		}
+		Node &operator=(Node &&node) TJS_NOEXCEPT {
+			if (this == &node) return *this;
+			VarName = node.VarName;
+			Expr = node.Expr;
+			node.VarName = nullptr;
+			return *this;
+		}
+	};
+	std::vector<Node> Nodes;
+	typedef std::vector<Node>::const_iterator iterator;
+public:
+	tTJSListCompExpr(tTJSExprNode *expr) { Expr = expr; }
+	~tTJSListCompExpr() { }
+	void Add(const tjs_char *varname, tTJSExprNode *iter) {
+		Nodes.emplace_back(iter, varname);
+	}
+	void AddPred(tTJSExprNode *pred) {
+		Nodes.emplace_back(pred, nullptr);
+	}
+	tTJSExprNode *GetExpr() { return Expr; }
 	iterator begin() const { return Nodes.cbegin(); }
 	iterator end() const { return Nodes.cend(); }
 };
@@ -485,11 +534,12 @@ public:
 	void ExitElseCode();
 
 	void EnterForCode();
-	void CreateForExprCode(tTJSExprNode *node);
+	void CreateForExprCode(tTJSExprNode *node, tSubParam *param=nullptr);
 	void SetForThirdExprCode(tTJSExprNode *node);
 	void ExitForCode();
 
-	void InitForIn(tTJSVarDeclList *vars, tTJSExprNode *expr);
+	void EnterForInCode(tTJSVarDeclList *vars, tTJSExprNode *expr);
+	void ExitForInCode();
 
 	void EnterSwitchCode(tTJSExprNode *node);
 	void ExitSwitchCode();
@@ -541,6 +591,9 @@ public:
 	tTJSVarDeclList * CreateVarDeclList();
 	tTJSVarDeclList::Node * GetVarDeclNode(const tjs_char * varname, tTJSExprNode * val = nullptr);
 	void DeclareVariables(tTJSVarDeclList *list);
+
+	tTJSListCompExpr *InitCompList(tTJSExprNode *expr) { return new tTJSListCompExpr(expr); }
+	void CreateCompArray(tTJSListCompExpr *expr, tTJSExprNode *arraynode);
 
 	tjs_char *GetTemporaryVariableName(const tTJSVarDeclList *vars = nullptr);
 

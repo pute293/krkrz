@@ -1,3 +1,32 @@
+/*Scripts.dump();
+
+for (var i = 0, e = [10,20,30]; i < e.count; ++i) {
+  var a = 1;
+  var b = 2;
+  var c = e[i];
+}
+
+for (var x in [10,20,30]) {
+  var a = 1;
+  var b = 2;
+  var c = x;
+  for (var y in [10,20,30]) {
+    var a = 1;
+    var b = 2;
+    var c = y;
+  }
+}
+
+var array = [40,50,60,70,80];
+for (var x in array) {
+  var a = x;
+}
+
+var a = [ x * 2 for x in [10,20,30] ];
+var a = [10,20,30];
+var b = [ x * 2 for x in a ];
+Debug.message(b*);
+*/
 Scripts.execStorage("TestClass.tjs");
 Test.init();
 

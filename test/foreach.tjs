@@ -10,6 +10,8 @@ class TestForEach extends Test {
     'test_for_iterator'
   ];
   
+  var b = void;
+  
   class It extends Iterator.Lazy {
     var x = 0;
     function It { super.Lazy(); }
@@ -37,6 +39,10 @@ class TestForEach extends Test {
     for (a in [50, 60, 70]) array1.add(a);
     assert_equal(a, 70, 'for scope 3');
     assert_equal_struct(array1, [10,11,12,13,14,15,20,30,40,50,60,70]);
+    
+    assert_equal(this.b, void);
+    for (b in [80, 90, 100]) { }
+    assert_equal(this.b, 100, 'for scope 4');
   }
   
   function test_for_dict {

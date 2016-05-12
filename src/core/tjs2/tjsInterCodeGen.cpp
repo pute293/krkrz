@@ -184,7 +184,15 @@ void tTJSVarDeclList::Push(tTJSVarDeclList::Node *node)
 }
 //---------------------------------------------------------------------------
 tTJSVarDeclList::Node::Node(const tjs_char *varname, tTJSExprNode *val)
-	: Value(val)
+	: Value(val), ResAddr(0)
+{
+	tjs_char *name = new tjs_char[TJS_strlen(varname)+1];
+	TJS_strcpy(name, varname);
+	Name = name;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList::Node::Node(const tjs_char *varname, tjs_int resaddr)
+	: Value(nullptr), ResAddr(resaddr)
 {
 	tjs_char *name = new tjs_char[TJS_strlen(varname)+1];
 	TJS_strcpy(name, varname);
@@ -198,7 +206,7 @@ tTJSVarDeclList::Node::~Node()
 }
 //---------------------------------------------------------------------------
 tTJSVarDeclList::Node::Node(Node &&node) TJS_NOEXCEPT
-	: Name(node.Name), Value(node.Value), Type(node.Type)
+	: Name(node.Name), Value(node.Value), Type(node.Type), ResAddr(node.ResAddr)
 {
 	node.Name = nullptr;
 	node.Value = nullptr;
@@ -211,6 +219,7 @@ tTJSVarDeclList::Node::operator=(Node &&node) TJS_NOEXCEPT
 	Name = node.Name;
 	Value = node.Value;
 	Type = node.Type;
+	ResAddr = node.ResAddr;
 	node.Name = nullptr;
 	node.Value = nullptr;
 	return *this;
@@ -2410,47 +2419,58 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 	  {
 		// inline array
 
-		tjs_int arraydp = PutData(tTJSVariant(TJS_W("Array")));
-		//	global %frame0
-		//	gpd %frame1, %frame0 . #arraydp // #arraydp = Array
-		tjs_int frame0 = frame;
-		PutCode(VM_GLOBAL, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
-		PutCode(VM_GPD, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(arraydp), node_pos);
-		//	new %frame0, %frame1()
-		PutCode(VM_NEW, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
-		PutCode(0);  // argument count for "new Array"
-		//	const %frame1, #zerodp
-		tjs_int zerodp = PutData(tTJSVariant(tTVInteger(0)));
-		PutCode(VM_CONST, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(zerodp), node_pos);
-		frame += 2;
-
-		ArrayArgStack.push(tArrayArg());
-		ArrayArgStack.top().Object = frame0;
-		ArrayArgStack.top().Counter = frame0 + 1;
-
 		tjs_int nodesize = node->GetSize();
-		if(node->GetSize() == 1 && (*(*node)[0])[0] == NULL)
+		
+		if (nodesize == 1 && (*node)[0]->GetOpecode() == T_ARRAYCOMP)
 		{
-			// the element is empty
+			// comprehension array
+			return _GenNodeCode(frame, (*node)[0], restype, reqresaddr, param);
 		}
 		else
 		{
-			for(tjs_int i = 0; i<nodesize; i++)
-			{
-				_GenNodeCode(frame, (*node)[i], TJS_RT_NEEDED, 0, tSubParam()); // elements
-			}
-		}
+			// extentional array
+			
+			tjs_int arraydp = PutData(tTJSVariant(TJS_W("Array")));
+			//	global %frame0
+			//	gpd %frame1, %frame0 . #arraydp // #arraydp = Array
+			tjs_int frame0 = frame;
+			PutCode(VM_GLOBAL, node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+			PutCode(VM_GPD, node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(arraydp), node_pos);
+			//	new %frame0, %frame1()
+			PutCode(VM_NEW, node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+			PutCode(0);  // argument count for "new Array"
+			//	const %frame1, #zerodp
+			tjs_int zerodp = PutData(tTJSVariant(tTVInteger(0)));
+			PutCode(VM_CONST, node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(zerodp), node_pos);
+			frame += 2;
 
-		ArrayArgStack.pop();
-		return (restype & TJS_RT_NEEDED)?(frame0):0;
+			ArrayArgStack.push(tArrayArg());
+			ArrayArgStack.top().Object = frame0;
+			ArrayArgStack.top().Counter = frame0 + 1;
+
+			if(node->GetSize() == 1 && (*(*node)[0])[0] == NULL)
+			{
+				// the element is empty
+			}
+			else
+			{
+				for(tjs_int i = 0; i<nodesize; i++)
+				{
+					_GenNodeCode(frame, (*node)[i], TJS_RT_NEEDED, 0, tSubParam()); // elements
+				}
+			}
+
+			ArrayArgStack.pop();
+			return (restype & TJS_RT_NEEDED)?(frame0):0;
+		}
 	  }
 
 	case T_ARRAYARG:
@@ -2474,6 +2494,152 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 		return 0;
 	  }
 
+	case T_ARRAYCOMP:
+	  {
+		//frame += 2;
+		
+		tjs_int arraydp = PutData(tTJSVariant(TJS_W("Array")));
+		//	global %frame0
+		//	gpd %frame1, %frame0 . #arraydp // #arraydp = Array
+		PutCode(VM_GLOBAL, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(VM_GPD, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(arraydp), node_pos);
+		//	new %frame0, %frame1()
+		PutCode(VM_NEW, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(0);  // argument count for "new Array"
+		//	const %frame1, #zerodp
+		tjs_int zerodp = PutData(tTJSVariant(tTVInteger(0)));
+		PutCode(VM_CONST, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(zerodp), node_pos);
+		
+		tjs_int frame0 = frame;
+		tjs_int frame1 = frame + 1;
+		frame += 2;
+		FrameBase += 2;
+		
+		auto nodesize = node->GetSize();
+		auto array = (*node)[0];
+		auto expr = (*node)[1];
+		for (unsigned int i = 2; i < nodesize; ++i) {
+			auto n = (*node)[i];
+			if (n->GetOpecode() == T_IN) {
+				const tjs_char *varname = (*n)[0]->GetValue().GetString();
+				tTJSExprNode *expr = (*n)[1];
+				EnterForCode();
+				auto decl_list = CreateVarDeclList();
+				decl_list->Push(varname);
+				EnterForInCode(decl_list, expr);
+			} else {
+				EnterIfCode();
+				CreateIfExprCode((*n)[0]);
+			}
+		}
+		
+		tjs_int framestart = frame;
+		
+		tjs_int fr = frame + (tjs_int)nodesize;
+		resaddr = _GenNodeCode(fr, expr, TJS_RT_NEEDED, 0, tSubParam());
+		
+		// spis %object . %count, %resaddr
+		PutCode(VM_SPIS, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame0));
+		PutCode(TJS_TO_VM_REG_ADDR(frame1));
+		PutCode(TJS_TO_VM_REG_ADDR(resaddr));
+		// inc %count
+		PutCode(VM_INC);
+		PutCode(TJS_TO_VM_REG_ADDR(frame1));
+		
+		ClearFrame(frame, framestart);
+		
+		for (unsigned int i = nodesize - 1; 2 <= i; --i) {
+			auto n = (*node)[i];
+			if (n->GetOpecode() == T_IN) {
+				ExitForInCode();
+				ExitForCode();
+			} else {
+				ExitIfCode();
+			}
+		}
+		
+		FrameBase -= 2;
+		return (restype & TJS_RT_NEEDED) ? frame0 : 0;
+	  }
+
+	case T_ITERATOR:
+	  {
+		// create iterator
+		tjs_int iterdp = PutData(tTJSVariant(TJS_W("Iterator")));
+		tjs_int fromdp = PutData(tTJSVariant(TJS_W("from")));
+		tjs_int frame2 = _GenNodeCode(frame, (*node)[0], TJS_RT_NEEDED, 0, tSubParam());
+		
+		// global %frame0
+		PutCode(VM_GLOBAL, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		// gpd %frame1, %frame0 . #iterdp // #iterdp = Iterator
+		PutCode(VM_GPD, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(iterdp), node_pos);
+		// calld %frame0, %frame1 . #fromdp (%frame2) // #fromdp = from
+		PutCode(VM_CALLD, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(fromdp), node_pos);
+		PutCode(1);
+		PutCode(TJS_TO_VM_REG_ADDR(frame2), node_pos);
+		
+		return (restype & TJS_RT_NEEDED) ? frame++ : 0;
+	  }
+
+	case T_ITERNEXT:
+	  {
+		// move forward iterator
+		tjs_int movedp = PutData(tTJSVariant(TJS_W("moveNext")));
+		
+		tjs_int frame1;
+		if (node->GetSize()) {
+			frame1 = _GenNodeCode(frame, (*node)[0], TJS_RT_NEEDED, 0, tSubParam());
+		} else {
+			frame1 = param.SubAddress;
+		}
+		
+		// calld %frame0, %frame1 . #movedp () // #movedp = moveNext
+		PutCode(VM_CALLD, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(movedp), node_pos);
+		PutCode(0);
+		
+		return (restype & TJS_RT_NEEDED) ? frame++ : 0;
+	  }
+
+	case T_ITERCURRENT:
+	  {
+		// get current item of iterator
+		tjs_int currdp = PutData(tTJSVariant(TJS_W("current")));
+		
+		tjs_int frame1;
+		if (node->GetSize()) {
+			frame1 = _GenNodeCode(frame, (*node)[0], TJS_RT_NEEDED, 0, tSubParam());
+		} else {
+			frame1 = param.SubAddress;
+		}
+		
+		// calld %frame0, %frame1 . #currdp () // #currdp = current
+		PutCode(VM_CALLD, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(currdp), node_pos);
+		PutCode(0);
+		
+		return (restype & TJS_RT_NEEDED) ? frame++ : 0;
+	  }
 
 	case T_INLINEDIC:
 	  {
@@ -2936,7 +3102,7 @@ void tTJSInterCodeContext::EnterForCode()
 	//NestVector.back().VariableCreated = false;
 }
 //---------------------------------------------------------------------------
-void tTJSInterCodeContext::CreateForExprCode(tTJSExprNode *node)
+void tTJSInterCodeContext::CreateForExprCode(tTJSExprNode *node, tSubParam *param)
 {
 	// process the "for"'s second clause; a condition expression
 
@@ -2945,7 +3111,7 @@ void tTJSInterCodeContext::CreateForExprCode(tTJSExprNode *node)
 	{
 		tjs_int fr = FrameBase;
 		tjs_int resaddr = GenNodeCode(fr, node, TJS_RT_NEEDED|TJS_RT_CFLAG,
-			0, tSubParam());
+			0, param ? *param : tSubParam());
 		bool inv = false;
 		if(!TJSIsCondFlagRetValue(resaddr))
 		{
@@ -3008,7 +3174,7 @@ void tTJSInterCodeContext::ExitForCode()
 	NestVector.pop_back();
 }
 //---------------------------------------------------------------------------
-void tTJSInterCodeContext::InitForIn(tTJSVarDeclList *vars, tTJSExprNode *expr)
+void tTJSInterCodeContext::EnterForInCode(tTJSVarDeclList *vars, tTJSExprNode *expr)
 {
 	// create initialization and condition codes for "for-in" statement
 	// syntax: for ( $$$ `vars` in `expr` ) block_or_statement
@@ -3024,34 +3190,20 @@ void tTJSInterCodeContext::InitForIn(tTJSVarDeclList *vars, tTJSExprNode *expr)
 	// 9  }
 	// here we process line 1..6
 	
-	tjs_char *t1 = GetTemporaryVariableName(vars);  // $1
-	vars->Push(t1);
-	tjs_char *t2 = GetTemporaryVariableName(vars);  // $2
-	vars->Pop();
-	
-	#define TJS_FORIN_MAKE_SYMBOL(varname, value) \
-	tTJSExprNode *varname = MakeNP0(T_SYMBOL); \
-	{ varname->SetValue(tTJSVariant(value)); }
-	#define TJS_FORIN_FUNC_CALL(obj, method, args) \
-	MakeNP2(T_LPARENTHESIS, MakeNP2(T_DOT, obj, method), args)
-	#define TJS_FORIN_FUNC_CALL0(obj, method) \
-	TJS_FORIN_FUNC_CALL(obj, method, MakeNP1(T_ARG, nullptr))
-	
+	const tjs_char *t1 = GetTemporaryVariableName();
 	// initialization code
 	{   // var $1 = Iterator.from(expr);
-		// [1] Iterator.from
-		TJS_FORIN_MAKE_SYMBOL(iter, "Iterator");
-		TJS_FORIN_MAKE_SYMBOL(from, "from");
-		// [2] var $1 = [1](expr)
-		auto arg = MakeNP1(T_ARG, expr);
-		InitLocalVariable(t1, TJS_FORIN_FUNC_CALL(iter, from, arg));
+		if (expr->GetOpecode() != T_ITERATOR)
+			expr = MakeNP1(T_ITERATOR, expr);
+		InitLocalVariable(t1, expr);
 	}
 	
 	// condition code
 	{	// $1.moveNext();
-		TJS_FORIN_MAKE_SYMBOL(d1, t1);
-		TJS_FORIN_MAKE_SYMBOL(next, "moveNext");
-		CreateForExprCode(TJS_FORIN_FUNC_CALL0(d1, next));
+		auto d1 = MakeNP0(T_SYMBOL);
+		d1->SetValue(tTJSVariant(t1));
+		auto next = MakeNP1(T_ITERNEXT, d1);
+		CreateForExprCode(next);
 	}
 	
 	// afterthought code
@@ -3066,10 +3218,18 @@ void tTJSInterCodeContext::InitForIn(tTJSVarDeclList *vars, tTJSExprNode *expr)
 	//         first declared variable and rest vars are assigned to `void`
 	//         if it does not have initialization expression.
 	{	// const $2 = $1.current();
-		TJS_FORIN_MAKE_SYMBOL(d1, t1);
-		TJS_FORIN_MAKE_SYMBOL(d2, t2);
-		TJS_FORIN_MAKE_SYMBOL(cur, "current");
-		InitLocalVariable(t2, TJS_FORIN_FUNC_CALL0(d1, cur));
+		
+		//auto curr = MakeNP0(T_ITERCURRENT);
+		//tSubParam param;
+		//param.SubAddress = d1;
+		//tjs_int d2 = GenNodeCode(FrameBase, curr, TJS_RT_NEEDED, 0, param);
+		
+		tjs_int frame_start = FrameBase;
+		
+		auto d1 = MakeNP0(T_SYMBOL);
+		d1->SetValue(tTJSVariant(t1));
+		auto curr = MakeNP1(T_ITERCURRENT, d1);
+		tjs_int d2 = GenNodeCode(FrameBase, curr, TJS_RT_NEEDED, 0, tSubParam());
 		
 		// what we want:
 		//   $$$ (vars[0], vars[1], ..., vars[n]) = $2
@@ -3078,16 +3238,21 @@ void tTJSInterCodeContext::InitForIn(tTJSVarDeclList *vars, tTJSExprNode *expr)
 		//   $$$ vars[1](=...), vars[2](=...), ..., vars[n](=...);
 		auto first = vars->Get(0);
 		// need delete first.Value ???
-		first->Value = d2;
+		first->Value = nullptr;
+		first->ResAddr = d2;
 		
 		DeclareVariables(vars);
+		
+		ClearFrame(FrameBase, frame_start);
 	}
 	
-	#undef TJS_FORIN_FUNC_CALL
-	#undef TJS_FORIN_MAKE_SYMBOL
-	
 	delete[] t1;
-	delete[] t2;
+}
+//---------------------------------------------------------------------------
+void tTJSInterCodeContext::ExitForInCode()
+{
+	// `Iterator.from` and `moveNext` create new frames
+	//FrameBase -= 2;
 }
 //---------------------------------------------------------------------------
 void tTJSInterCodeContext::EnterSwitchCode(tTJSExprNode *node)
@@ -3983,7 +4148,7 @@ void tTJSInterCodeContext::DeclareVariables(tTJSVarDeclList *list)
 			if (node.Value) {
 				InitLocalVariable(node.Name, node.Value);
 			} else {
-				AddLocalVariable(node.Name);
+				AddLocalVariable(node.Name, node.ResAddr);
 			}
 			break;
 		case tTJSVarDeclList::NodeType::NotLocal:
@@ -3991,11 +4156,65 @@ void tTJSInterCodeContext::DeclareVariables(tTJSVarDeclList *list)
 				tTJSExprNode *name = MakeNP0(T_SYMBOL);
 				name->SetValue(tTJSVariant(node.Name));
 				CreateExprCode(MakeNP2(T_EQUAL, name, node.Value));
+			} else if (node.ResAddr) {
+				tjs_int n = Namespace.Find(node.Name);
+				if (n < 0) {
+					// on `this` context
+					tjs_int	dp = PutData(tTJSVariant(node.Name));
+					PutCode(VM_SPDS, LEX_POS);
+					PutCode(TJS_TO_VM_REG_ADDR(-1), LEX_POS);
+					PutCode(TJS_TO_VM_REG_ADDR(dp), LEX_POS);
+					PutCode(TJS_TO_VM_REG_ADDR(node.ResAddr), LEX_POS);
+				} else {
+					// on outer scope
+					PutCode(VM_CP, LEX_POS);
+					PutCode(TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1), LEX_POS);
+					PutCode(TJS_TO_VM_REG_ADDR(node.ResAddr), LEX_POS);
+				}
 			}
 		}
 	}
 	
 	delete list;
+}
+//---------------------------------------------------------------------------
+void tTJSInterCodeContext::CreateCompArray(tTJSListCompExpr *expr, tTJSExprNode *arraynode)
+{
+	for (const auto &node : *expr) {
+		if (node.VarName) {
+			EnterForCode();
+			AddLocalVariable(node.VarName);
+			auto var = CreateVarDeclList(); 
+			var->Push(node.VarName);
+			EnterForInCode(var, node.Expr);
+		} /*else {
+			EnterIfCode();
+			CreateIfExprCode(node.Expr);
+			EnterBlock();
+		}*/
+	}
+	
+	// call "add(expr)" for arraynode
+	auto add = MakeNP0(T_CONSTVAL);
+	add->SetValue(tTJSVariant(TJS_W("add")));
+	auto caller = MakeNP2(T_DOT, arraynode, add);
+	auto arg = MakeNP1(T_ARG, expr->GetExpr());
+	CreateExprCode(MakeNP2(T_LPARENTHESIS, caller, arg));
+	
+	//arraynode->Add(MakeNP1(T_ARRAYARG, expr->GetExpr()));
+	// array.add(
+	
+	for (const auto &node : *expr) {
+		if (node.VarName) {
+			ExitForInCode();
+			ExitForCode();
+		} /*else {
+			ExitBlock();
+			ExitIfCode();
+		}*/
+	}
+	
+	delete expr;
 }
 //---------------------------------------------------------------------------
 tjs_char *
