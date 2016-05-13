@@ -42,7 +42,7 @@ try {
   Scripts.execStorage("negative_cond.tjs");
   Scripts.execStorage("iterator.tjs");
   Scripts.execStorage("foreach.tjs");
-  Scripts.execStorage("arraycomp.tjs");
+  Scripts.execStorage("comprehension.tjs");
 } catch (e) {
   if (e) {
     err = e.message;

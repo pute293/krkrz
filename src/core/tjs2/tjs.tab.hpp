@@ -175,10 +175,11 @@ namespace TJS {
      T_ITERNEXT = 391,
      T_ITERCURRENT = 392,
      T_ARRAYCOMP = 393,
-     T_CONSTVAL = 394,
-     T_SYMBOL = 395,
-     T_REGEXP = 396,
-     T_VARIANT = 397
+     T_DICTCOMP = 394,
+     T_CONSTVAL = 395,
+     T_SYMBOL = 396,
+     T_REGEXP = 397,
+     T_VARIANT = 398
    };
 #endif
 
@@ -195,7 +196,6 @@ typedef union YYSTYPE
 	tTJSExprNode *		np;
 	tTJSVarDeclList	*	dp;
 	tTJSVarDeclList::Node *	dn;
-//	tTJSListCompExpr *	lp;
 
 
 

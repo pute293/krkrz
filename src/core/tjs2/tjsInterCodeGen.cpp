@@ -2496,8 +2496,6 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 
 	case T_ARRAYCOMP:
 	  {
-		//frame += 2;
-		
 		tjs_int arraydp = PutData(tTJSVariant(TJS_W("Array")));
 		//	global %frame0
 		//	gpd %frame1, %frame0 . #arraydp // #arraydp = Array
@@ -2524,9 +2522,8 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 		FrameBase += 2;
 		
 		auto nodesize = node->GetSize();
-		auto array = (*node)[0];
-		auto expr = (*node)[1];
-		for (unsigned int i = 2; i < nodesize; ++i) {
+		auto expr = (*node)[0];
+		for (unsigned int i = 1; i < nodesize; ++i) {
 			auto n = (*node)[i];
 			if (n->GetOpecode() == T_IN) {
 				const tjs_char *varname = (*n)[0]->GetValue().GetString();
@@ -2557,6 +2554,140 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 		
 		ClearFrame(frame, framestart);
 		
+		for (unsigned int i = nodesize - 1; 1 <= i; --i) {
+			auto n = (*node)[i];
+			if (n->GetOpecode() == T_IN) {
+				ExitForInCode();
+				ExitForCode();
+			} else {
+				ExitIfCode();
+			}
+		}
+		
+		FrameBase -= 2;
+		return (restype & TJS_RT_NEEDED) ? frame0 : 0;
+	  }
+
+	case T_INLINEDIC:
+	  {
+		// inline dictionary
+
+		tjs_int nodesize = node->GetSize();
+		
+		if (nodesize == 1 && (*node)[0]->GetOpecode() == T_DICTCOMP)
+		{
+			// comprehension array
+			return _GenNodeCode(frame, (*node)[0], restype, reqresaddr, param);
+		}
+		else
+		{
+			// extentional dictionary
+		
+			tjs_int dicdp = PutData(tTJSVariant(TJS_W("Dictionary")));
+			//	global %frame0
+			//	gpd %frame1, %frame0 . #dicdp // #dicdp = Dictionary
+			tjs_int frame0 = frame;
+			PutCode(VM_GLOBAL, node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+			PutCode(VM_GPD, node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(dicdp), node_pos);
+			//	new %frame0, %frame1()
+			PutCode(VM_NEW, node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+			PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+			PutCode(0);  // argument count for "Dictionary" class
+			frame += 2;
+			ClearFrame(frame, frame0 + 1);  // clear register at frame+1
+
+			ArrayArgStack.push(tArrayArg());
+			ArrayArgStack.top().Object = frame0;
+
+			
+			for(tjs_int i = 0; i < nodesize; i++)
+			{
+			_GenNodeCode(frame, (*node)[i], TJS_RT_NEEDED, 0, tSubParam()); // element
+			}
+
+			ArrayArgStack.pop();
+			return (restype & TJS_RT_NEEDED) ? (frame0): 0;
+		}
+	  }
+
+	case T_DICELM:
+	  {
+		// an element of inline dictionary
+		tjs_int framestart = frame;
+		tjs_int name;
+		tjs_int value;
+		name = _GenNodeCode(frame, (*node)[0], TJS_RT_NEEDED, 0, tSubParam());
+		value = _GenNodeCode(frame, (*node)[1], TJS_RT_NEEDED, 0, tSubParam());
+		// spis %object.%name, %value
+		PutCode(VM_SPIS, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(ArrayArgStack.top().Object));
+		PutCode(TJS_TO_VM_REG_ADDR(name));
+		PutCode(TJS_TO_VM_REG_ADDR(value));
+
+		ClearFrame(frame, framestart);
+
+		return 0;
+	  }
+
+	case T_DICTCOMP:
+	  {
+		tjs_int dicdp = PutData(tTJSVariant(TJS_W("Dictionary")));
+		//	global %frame0
+		//	gpd %frame1, %frame0 . #dicdp // #dicdp = Dictionary
+		PutCode(VM_GLOBAL, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(VM_GPD, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(dicdp), node_pos);
+		//	new %frame0, %frame1()
+		PutCode(VM_NEW, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(0);  // argument count for "Dictionary" class
+		
+		tjs_int frame0 = frame;
+		tjs_int frame1 = frame + 1;
+		frame += 2;
+		FrameBase += 2;
+		
+		auto nodesize = node->GetSize();
+		auto name_expr = (*node)[0];
+		auto value_expr = (*node)[1];
+		
+		for (unsigned int i = 2; i < nodesize; ++i) {
+			auto n = (*node)[i];
+			if (n->GetOpecode() == T_IN) {
+				const tjs_char *varname = (*n)[0]->GetValue().GetString();
+				tTJSExprNode *expr = (*n)[1];
+				EnterForCode();
+				auto decl_list = CreateVarDeclList();
+				decl_list->Push(varname);
+				EnterForInCode(decl_list, expr);
+			} else {
+				EnterIfCode();
+				CreateIfExprCode((*n)[0]);
+			}
+		}
+		
+		tjs_int framestart = frame;
+		
+		tjs_int fr = frame + (tjs_int)nodesize;
+		tjs_int name = _GenNodeCode(fr, name_expr, TJS_RT_NEEDED, 0, tSubParam());
+		tjs_int value = _GenNodeCode(fr, value_expr, TJS_RT_NEEDED, 0, tSubParam());
+		// spis %object.%name, %value
+		PutCode(VM_SPIS, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame0));
+		PutCode(TJS_TO_VM_REG_ADDR(name));
+		PutCode(TJS_TO_VM_REG_ADDR(value));
+		
+		ClearFrame(frame, framestart);
+		
 		for (unsigned int i = nodesize - 1; 2 <= i; --i) {
 			auto n = (*node)[i];
 			if (n->GetOpecode() == T_IN) {
@@ -2570,6 +2701,49 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 		FrameBase -= 2;
 		return (restype & TJS_RT_NEEDED) ? frame0 : 0;
 	  }
+
+	case T_REGEXP:
+	  {
+		// constant regular expression
+		if(!(restype & TJS_RT_NEEDED)) return 0;
+		tjs_int regexpdp = PutData(tTJSVariant(TJS_W("RegExp")));
+		tjs_int patdp = PutData(node->GetValue());
+		tjs_int compiledp = PutData(tTJSVariant(TJS_W("_compile")));
+		// global %frame0
+		//	gpd %frame1, %frame0 . #regexpdp // #regexpdp = RegExp
+		tjs_int frame0 = frame;
+		PutCode(VM_GLOBAL, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame));
+		PutCode(VM_GPD);
+		PutCode(TJS_TO_VM_REG_ADDR(frame + 1));
+		PutCode(TJS_TO_VM_REG_ADDR(frame));
+		PutCode(TJS_TO_VM_REG_ADDR(regexpdp));
+		// const frame2, patdp;
+		PutCode(VM_CONST);
+		PutCode(TJS_TO_VM_REG_ADDR(frame + 2));
+		PutCode(TJS_TO_VM_REG_ADDR(patdp));
+		// new frame0 , frame1();
+		PutCode(VM_NEW);
+		PutCode(TJS_TO_VM_REG_ADDR(frame));
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1));
+		PutCode(0);
+		// calld 0, frame0 . #compiledp(frame2)
+		PutCode(VM_CALLD);
+		PutCode(TJS_TO_VM_REG_ADDR(0));
+		PutCode(TJS_TO_VM_REG_ADDR(frame0));
+		PutCode(TJS_TO_VM_REG_ADDR(compiledp));
+		PutCode(1);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+2));
+		frame+=3;
+		ClearFrame(frame, frame0 + 1);
+
+		return frame0;
+	  }
+
+	case T_VOID:
+		if(param.SubType) _yyerror(TJSCannotModifyLHS, Block);
+		if(!(restype & TJS_RT_NEEDED)) return 0;
+		return 0; // 0 is always void
 
 	case T_ITERATOR:
 	  {
@@ -2641,101 +2815,6 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 		return (restype & TJS_RT_NEEDED) ? frame++ : 0;
 	  }
 
-	case T_INLINEDIC:
-	  {
-		// inline dictionary
-		tjs_int dicdp = PutData(tTJSVariant(TJS_W("Dictionary")));
-		//	global %frame0
-		//	gpd %frame1, %frame0 . #dicdp // #dicdp = Dictionary
-		tjs_int frame0 = frame;
-		PutCode(VM_GLOBAL, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
-		PutCode(VM_GPD, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(dicdp), node_pos);
-		//	new %frame0, %frame1()
-		PutCode(VM_NEW, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
-		PutCode(0);  // argument count for "Dictionary" class
-		frame += 2;
-		ClearFrame(frame, frame0 + 1);  // clear register at frame+1
-
-		ArrayArgStack.push(tArrayArg());
-		ArrayArgStack.top().Object = frame0;
-
-		tjs_int nodesize = node->GetSize();
-		for(tjs_int i = 0; i < nodesize; i++)
-		{
-			_GenNodeCode(frame, (*node)[i], TJS_RT_NEEDED, 0, tSubParam()); // element
-		}
-
-		ArrayArgStack.pop();
-		return (restype & TJS_RT_NEEDED) ? (frame0): 0;
-	  }
-
-	case T_DICELM:
-	  {
-		// an element of inline dictionary
-		tjs_int framestart = frame;
-		tjs_int name;
-		tjs_int value;
-		name = _GenNodeCode(frame, (*node)[0], TJS_RT_NEEDED, 0, tSubParam());
-		value = _GenNodeCode(frame, (*node)[1], TJS_RT_NEEDED, 0, tSubParam());
-		// spis %object.%name, %value
-		PutCode(VM_SPIS, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(ArrayArgStack.top().Object));
-		PutCode(TJS_TO_VM_REG_ADDR(name));
-		PutCode(TJS_TO_VM_REG_ADDR(value));
-
-		ClearFrame(frame, framestart);
-
-		return 0;
-	  }
-
-	case T_REGEXP:
-	  {
-		// constant regular expression
-		if(!(restype & TJS_RT_NEEDED)) return 0;
-		tjs_int regexpdp = PutData(tTJSVariant(TJS_W("RegExp")));
-		tjs_int patdp = PutData(node->GetValue());
-		tjs_int compiledp = PutData(tTJSVariant(TJS_W("_compile")));
-		// global %frame0
-		//	gpd %frame1, %frame0 . #regexpdp // #regexpdp = RegExp
-		tjs_int frame0 = frame;
-		PutCode(VM_GLOBAL, node_pos);
-		PutCode(TJS_TO_VM_REG_ADDR(frame));
-		PutCode(VM_GPD);
-		PutCode(TJS_TO_VM_REG_ADDR(frame + 1));
-		PutCode(TJS_TO_VM_REG_ADDR(frame));
-		PutCode(TJS_TO_VM_REG_ADDR(regexpdp));
-		// const frame2, patdp;
-		PutCode(VM_CONST);
-		PutCode(TJS_TO_VM_REG_ADDR(frame + 2));
-		PutCode(TJS_TO_VM_REG_ADDR(patdp));
-		// new frame0 , frame1();
-		PutCode(VM_NEW);
-		PutCode(TJS_TO_VM_REG_ADDR(frame));
-		PutCode(TJS_TO_VM_REG_ADDR(frame+1));
-		PutCode(0);
-		// calld 0, frame0 . #compiledp(frame2)
-		PutCode(VM_CALLD);
-		PutCode(TJS_TO_VM_REG_ADDR(0));
-		PutCode(TJS_TO_VM_REG_ADDR(frame0));
-		PutCode(TJS_TO_VM_REG_ADDR(compiledp));
-		PutCode(1);
-		PutCode(TJS_TO_VM_REG_ADDR(frame+2));
-		frame+=3;
-		ClearFrame(frame, frame0 + 1);
-
-		return frame0;
-	  }
-
-	case T_VOID:
-		if(param.SubType) _yyerror(TJSCannotModifyLHS, Block);
-		if(!(restype & TJS_RT_NEEDED)) return 0;
-		return 0; // 0 is always void
 	}
 
 	return 0;

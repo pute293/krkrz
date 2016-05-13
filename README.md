@@ -1,8 +1,9 @@
 # TJS 拡張
 - `for-in` 構文
   - `for (var item in [10,20,30]) { ... }`
-- 配列の内包表記
+- 配列・辞書の内包表記
   - `[ x * 2 for x in array, x < 10 ]`
+  - `%[ x => y for x in array1, y in array2, y < x * 2 ]`
   - python と haskell を足して割った感じで、`[ expr for x in expr, y in expr, y < 10 ]` みたいに書く。述語は `,` の代わりに `if`でも可
 - 組み込みクラスへのネイティブメソッドの追加（特に高階関数）
   - `Array`
