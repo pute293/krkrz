@@ -170,6 +170,81 @@ tjs_error Filter(tTJSVariant *result, Pred pred,
 	return TJS_S_OK;
 }
 
+// Reduce -------------------------------------------------------------------
+TJS_LAZY_ITERATOR_METHOD_DECL(Reduce)
+{
+	TJS_ITERATOR_CHECK_FUNCTION2(0, fn, fn_this, source);
+	ParamList paramList(numparams + 2);
+	/* paramList[0]  := accumulator
+	 * paramList[1]  := current value
+	 * paramList[2]  := index
+	 * paramList[..] := *args */
+	paramList.SetIndex(2, 0);
+	for (tjs_int i = 2; i < numparams; ++i)	{
+		paramList[i + 1] = param[i];
+	}
+	tTJSVariant *init = 1 < numparams ? param[1] : nullptr;
+	
+	/**
+	 * 1. init given
+	 *   1.1. empty iterator => return init
+	 *   1.2  else => procedure call
+	 * 2. init not given
+	 *   2.1. empty iterator => return void
+	 *   2.2. single iterator => return it
+	 *   2.3. else => procedure call
+	 */
+	
+	tTJSVariant next, item;
+	tjs_error hr = ni->MoveNext(&next);
+	if (TJS_FAILED(hr)) return hr;
+	
+	if (!next.operator bool() || hr == TJS_S_FALSE) {
+		// 1.1.
+		// 2.1.
+		if (result) {
+			if (init) *result = *init;
+			else result->Clear();
+		}
+		return TJS_S_OK;
+	}
+	
+	tTJSVariant acc, cur;
+	paramList[0] = &acc;
+	paramList[1] = &cur;
+	
+	if (init) {
+		// 1.2.
+		acc = *init;
+	} else {
+		hr = ni->GetCurrent(&acc);
+		if (TJS_FAILED(hr)) return hr;
+		hr = ni->MoveNext(&next);
+		if (TJS_FAILED(hr)) return hr;
+		if (!next.operator bool() || hr == TJS_S_FALSE) {
+			// 2.2.
+			if (result) *result = acc;
+			return TJS_S_OK;
+		}
+		// 2.3.
+	}
+	
+	tTJSVariant v;
+	do {
+		hr = ni->GetCurrent(&cur);
+		if (TJS_FAILED(hr)) return hr;
+		hr = fn->FuncCall(0, nullptr, nullptr, &v, paramList.Count, paramList.Params, fn_this);
+		if (TJS_FAILED(hr)) return hr;
+		if (hr == TJS_S_FALSE) break;
+		acc = v;
+		hr = ni->MoveNext(&next);
+		if (TJS_FAILED(hr)) return hr;
+	} while (next.operator bool() && hr != TJS_S_FALSE);
+	
+	if (result) *result = v;
+	return TJS_S_OK;
+}
+
 // Drop ---------------------------------------------------------------------
 TJS_LAZY_ITERATOR_METHOD_DECL(Drop)
 {
@@ -286,6 +361,7 @@ TJS_END_NATIVE_METHOD_DECL(methodname)
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(each, Each, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(map, Map, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(filter, Filter, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(reduce, Reduce, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(drop, Drop, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(take, Take, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(all, All, classname) \

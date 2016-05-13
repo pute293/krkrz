@@ -14,11 +14,42 @@
 
 #include <algorithm>
 #include <unordered_set>
+#include <functional>
 #include "tjsCommHead.h"
 #include "tjsNative.h"
 
 namespace TJS
 {
+
+class iTJSIterator {
+	typedef tTJSVariant V;
+public:
+	typedef std::function<tjs_error(V*,tjs_int)> action_t;
+	typedef std::function<tjs_error(V*,V*,tjs_int)> func_t;
+	typedef std::function<tjs_error(V*,V*,V*,tjs_int)> reduce_t;
+	
+	virtual tjs_error TJS_INTF_METHOD GetCurrent(tTJSVariant *result) = 0;
+	virtual tjs_error TJS_INTF_METHOD MoveNext(tTJSVariant *result) = 0;
+	virtual tjs_error TJS_INTF_METHOD Each(action_t action);
+	virtual tjs_error TJS_INTF_METHOD Map(tTJSVariant *result, func_t map);
+	virtual tjs_error TJS_INTF_METHOD Filter(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD Reduce(tTJSVariant *result, tTJSVariant *init, reduce_t proc);
+	virtual tjs_error TJS_INTF_METHOD Drop(tTJSVariant *result, tTVInteger count);
+	virtual tjs_error TJS_INTF_METHOD Take(tTJSVariant *result, tTVInteger count);
+	virtual tjs_error TJS_INTF_METHOD All(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD Any(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD None(tTJSVariant *result, func_t pred);
+	
+	//virtual tjs_error TJS_INTF_METHOD DropWhile(tTJSVariant *result, func_t pred);
+	//virtual tjs_error TJS_INTF_METHOD TakeWhile(tTJSVariant *result, func_t pred);
+	//virtual tjs_error TJS_INTF_METHOD Find(tTJSVariant *result, func_t pred);
+	//virtual tjs_error TJS_INTF_METHOD FindIndex(tTJSVariant *result, func_t pred);
+	//virtual tjs_error TJS_INTF_METHOD Pairwise(tTJSVariant *result, tTVInteger count);
+	//virtual tjs_error TJS_INTF_METHOD Slice(tTJSVariant *result, tTVInteger count);
+	//virtual tjs_error TJS_INTF_METHOD Reject(tTJSVariant *result, func_t pred);
+	////virtual tjs_error TJS_INTF_METHOD Zip(tTJSVariant *result, tTVInteger count);
+};
+
 //---------------------------------------------------------------------------
 // TJS `Iterator` class/instance
 //   - The base class of all Iterator classes.
@@ -47,14 +78,38 @@ namespace TJS
 //       returns the current element
 //   - moveNext()
 //       moves to next state and returns wheather moved or not
+//   - each
+//   - map
+//   - filter
+//   - reduce
+//   - drop
+//   - take
+//   - all
+//   - any
+//   - none
 //---------------------------------------------------------------------------
-class tTJSNI_Iterator : public tTJSNativeInstance
+class tTJSNI_Iterator : public tTJSNativeInstance, public iTJSIterator
 {
 	typedef tTJSNativeInstance inherited;
 
 public:
 	tTJSNI_Iterator();
+	
+public:
+	tjs_error TJS_INTF_METHOD
+		Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj);
+	void TJS_INTF_METHOD Destruct();
+	
+	tjs_error TJS_INTF_METHOD GetCurrent(tTJSVariant *result);
+	tjs_error TJS_INTF_METHOD MoveNext(tTJSVariant *result);
 
+private:
+	iTJSDispatch2 *BackEnd = nullptr;
+	tjs_int Index = -1;
+	tTJSVariant CachedItem;
+	bool IsCached = false;
+	tjs_uint32 CurrentHint = 0;
+	tjs_uint32 NextHint = 0;
 };
 
 //---------------------------------------------------------------------------
@@ -76,40 +131,17 @@ private:
 //---------------------------------------------------------------------------
 // TJS ArrayIterator class/instance
 //---------------------------------------------------------------------------
-class tTJSNI_ArrayIterator : public tTJSNativeInstance
+class tTJSNI_ArrayIterator : public tTJSNativeInstance, public iTJSIterator
 {
 	typedef tTJSNativeInstance inherited;
 
 public:
-	template<typename Action>
-	tjs_error Each( tTJSVariant *result,
-					iTJSDispatch2 *objthis,
-					Action action);
-	
-	template<typename Action>
-	tjs_error FilterMap(tTJSVariant *result,
-						iTJSDispatch2 *objthis,
-						Action action);
-	
-	template<typename Action>
-	tjs_error Reduce(	tTJSVariant *result,
-						tTJSVariant *init,
-						iTJSDispatch2 *objthis,
-						Action action);
-	
 	/*
-			dropWhile
-			takeWhile
-			reduce
 			at
 			first
 			last
 			flatMap
 			cycle
-			find
-			findIndex
-			pairwise
-			slice
 			contains
 			groupBy
 			count
@@ -118,8 +150,6 @@ public:
 			minmax
 			uniq
 			partition
-			reject
-			zip
 			
 			lazy
 	*/
@@ -130,22 +160,8 @@ public:
 		Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj);
 	void TJS_INTF_METHOD Destruct();
 
-	tjs_error GetCurrent(tTJSVariant *val) {
-		if (Index < 0) {
-			val->Clear();
-			return TJS_S_OK;
-		}
-		return BackEnd->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, Index, val, BackEnd);
-	}
-	bool MoveNext(void) {
-		tTJSVariant count;
-		BackEnd->PropGet(0, TJS_W("count"), &CountHint, &count, BackEnd);
-		if (Index + 1 < (tjs_int)count) {
-			Index += 1;
-			return true;
-		}
-		return false;
-	}
+	tjs_error TJS_INTF_METHOD GetCurrent(tTJSVariant *val);
+	tjs_error TJS_INTF_METHOD MoveNext(tTJSVariant *result);
 
 private:
 	iTJSDispatch2 *BackEnd = nullptr;
@@ -171,26 +187,9 @@ private:
 };
 
 //---------------------------------------------------------------------------
-class tTJSNI_DictionaryIterator : public tTJSNativeInstance
+class tTJSNI_DictionaryIterator : public tTJSNativeInstance, public iTJSIterator
 {
 	typedef tTJSNativeInstance inherited;
-
-public:
-	template<typename Action>
-	tjs_error Each( tTJSVariant *result,
-					iTJSDispatch2 *objthis,
-					Action action);
-	
-	template<typename Action>
-	tjs_error FilterMap(tTJSVariant *result,
-						iTJSDispatch2 *objthis,
-						Action action);
-	
-	template<typename Action>
-	tjs_error Reduce(	tTJSVariant *result,
-						tTJSVariant *init,
-						iTJSDispatch2 *objthis,
-						Action action);
 
 public:
 	tTJSNI_DictionaryIterator();
@@ -198,11 +197,14 @@ public:
 		Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj);
 	void TJS_INTF_METHOD Destruct();
 
-	tjs_error GetCurrent(tTJSVariant *val);
-	bool MoveNext(void);
-	bool UpdateKeys(void);
+	tjs_error TJS_INTF_METHOD GetCurrent(tTJSVariant *result);
+	tjs_error TJS_INTF_METHOD MoveNext(tTJSVariant *result);
+	tjs_error TJS_INTF_METHOD Each(action_t action);
+	tjs_error TJS_INTF_METHOD Map(tTJSVariant *result, func_t map);
+	tjs_error TJS_INTF_METHOD Filter(tTJSVariant *result, func_t pred);
 
 private:
+	bool UpdateKeys(void);
 	bool isExist(const tjs_char *key) {
 		tTJSVariant dummy;
 		return TJS_S_OK == BackEnd->PropGet(TJS_MEMBERMUSTEXIST, key, nullptr, &dummy, BackEnd);

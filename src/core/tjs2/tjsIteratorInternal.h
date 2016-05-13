@@ -90,6 +90,13 @@ struct ParamList {
 		paramList[i + 1] = param[i];						\
 	}
 
+#define TJS_ITERATOR_PREPARE_ARRAY_PARAMLISTX(paramList, index)\
+	ParamList paramList(numparams + index);					\
+	paramList.SetIndex(index, 0);							\
+	for (tjs_int i = index; i < numparams; ++i)	{			\
+		paramList[i + 1] = param[i];						\
+	}
+
 #define TJS_ITERATOR_PREPARE_INT(count)						\
 	if (numparams != 1) return TJS_E_BADPARAMCOUNT;			\
 	if (param[0]->Type() != tvtInteger)						\

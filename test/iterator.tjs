@@ -15,6 +15,7 @@ class TestIterator extends Test {
     'test_array_all',
     'test_array_any',
     'test_array_none',
+    'test_array_reduce',
     
     'test_dict_each',
     'test_dict_map',
@@ -24,6 +25,16 @@ class TestIterator extends Test {
     'test_dict_all',
     'test_dict_any',
     'test_dict_none',
+    'test_dict_reduce',
+    
+    'test_iter_each',
+    'test_iter_map',
+    'test_iter_filter',
+    'test_iter_takedrop',
+    'test_iter_all',
+    'test_iter_any',
+    'test_iter_none',
+    'test_iter_reduce',
     
     'test_lazy_each',
     'test_lazy_map',
@@ -32,6 +43,7 @@ class TestIterator extends Test {
     'test_lazy_all',
     'test_lazy_any',
     'test_lazy_none',
+    'test_lazy_reduce',
     'test_lazy'
   ];
   var ctx;
@@ -40,6 +52,15 @@ class TestIterator extends Test {
   var emp_ary;
   var emp_dic;
   var inf;
+  var iter;
+  
+  class It extends Iterator {
+    var i = -1;
+    var X = 5;
+    function It() { super.Iterator(); }
+    function current { return i * 3; }
+    function moveNext { i += 1; return i < 5; }
+  }
   
   class InfiniteIt extends Iterator.Lazy {
     var i = -1;
@@ -55,6 +76,7 @@ class TestIterator extends Test {
     emp_ary = new ArrayIterator([]);
     d = Iterator.from(%[a: 10, b: 20, c: 30, d: 40, e: 50, f: 60, g: 70, h: 80, i: 90, j: 100]);
     emp_dic = new DictionaryIterator(%[]);
+    iter = new It();
     inf = new InfiniteIt();
   }
   
@@ -219,6 +241,16 @@ class TestIterator extends Test {
     }
   }
   
+  function test_iter_each {
+    iter.each(-> (x,i,y,z) {
+      self.assert_equal(x, idx*3, 'arg 1');
+      self.assert_equal(i, idx, 'arg 2');
+      self.assert_equal(y, 'a', 'arg 3');
+      self.assert_equal(z, void, 'arg 4');
+      idx += 1;
+    } incontextof ctx, 'a');
+  }
+  
   function test_array_map {
     // with return
     assert_equal_struct(a.map(function (x, i, y, z) {
@@ -270,6 +302,10 @@ class TestIterator extends Test {
     assert_equal_struct(inf.map(->x[x*2]).take(5).toArray(), [0,6,12,18,24], 'map');
   }
   
+  function test_iter_map {
+    assert_equal_struct(iter.map(->x[x*2]), [0,6,12,18,24], 'map');
+  }
+  
   function test_array_filter {
     // with return
     assert_equal_struct(a.filter(function (x, i, y, z) {
@@ -319,6 +355,10 @@ class TestIterator extends Test {
   
   function test_lazy_filter {
     assert_equal_struct(inf.filter(->x[x%5===0]).take(3).toArray(), [0,15,30], 'filter');
+  }
+  
+  function test_iter_filter {
+    assert_equal_struct(iter.filter(->x[x%6===0]), [0,6,12], 'filter');
   }
   
   function test_array_drop {
@@ -383,6 +423,19 @@ class TestIterator extends Test {
     assert_equal_struct(inf.drop(10).take(1).toArray(), [30], 'drop(10).take(1)');
   }
   
+  function test_iter_takedrop {
+    assert_equal_struct(iter.take(3), [0,3,6], 'take(3)');
+    
+    setup();
+    assert_equal_struct(iter.drop(2).take(4), [6,9,12], 'drop(2).take(4)');
+    
+    setup();
+    assert_equal_struct(iter.take(4).drop(2), [6,9], 'take(4).drop(2)');
+    
+    setup();
+    assert_equal_struct(iter.drop(10).take(1), [], 'drop(10).take(1)');
+  }
+  
   function test_array_all {
     // with return
     // all を呼んだあとのイテレータの位置は不定
@@ -409,6 +462,12 @@ class TestIterator extends Test {
     // without return
     setup();
     assert_equal(a.all(->{}), false, 'without return');
+    
+    setup();
+    assert(Iterator.from([]).all(->[false], 'empty'));
+    
+    setup();
+    assert_not(Iterator.from([1]).all(->x[false], 'single'));
   }
   
   function test_dict_all {
@@ -443,6 +502,13 @@ class TestIterator extends Test {
     
     setup();
     assert_not(inf.all(->x[x%5===0]), 'all 2');
+  }
+  
+  function test_iter_all {
+    assert(iter.all(->x[x%3===0]), 'all 1');
+    
+    setup();
+    assert_not(iter.all(->x[x%5===0]), 'all 2');
   }
   
   function test_array_any {
@@ -507,6 +573,13 @@ class TestIterator extends Test {
     assert_not(inf.take(100).any(->x[x*2===3]), 'any 2');
   }
   
+  function test_iter_any {
+    assert(iter.any(->x[x%5===0]), 'any 1');
+    
+    setup();
+    assert_not(iter.any(->x[x*2===3]), 'any 2');
+  }
+  
   function test_array_none {
     // with return
     // none を呼んだあとのイテレータの位置は不定
@@ -567,6 +640,37 @@ class TestIterator extends Test {
     
     setup();
     assert_not(inf.none(->x[x%5===0]), 'none 2');
+  }
+  
+  function test_iter_none {
+    assert(iter.none(->x[x*2===3]), 'none 1');
+    
+    setup();
+    assert_not(iter.none(->x[x%5===0]), 'none 2');
+  }
+  
+  function test_array_reduce {
+    assert_equal(a.reduce(->(x,y)[x+y]), 10+20+30+40+50+60+70+80+90+100, 'no init');
+    setup();
+    assert_equal(a.reduce(->(x,y)[x+y], 200), 200+10+20+30+40+50+60+70+80+90+100, 'init');
+  }
+  
+  function test_dict_reduce {
+    assert_equal(d.reduce(->(x,y)[[,x[1]+y[1],]])[1], 10+20+30+40+50+60+70+80+90+100, 'no init');
+    setup();
+    assert_equal(d.reduce(->(x,y)[[,x[1]+y[1],]], [,200])[1], 200+10+20+30+40+50+60+70+80+90+100, 'init');
+  }
+  
+  function test_iter_reduce {
+    assert_equal(iter.reduce(->(x,y)[x+y]), 0+3+6+9+12, 'no init');
+    setup();
+    assert_equal(iter.reduce(->(x,y)[x+y], 16), 16+0+3+6+9+12, 'init');
+  }
+  
+  function test_lazy_reduce {
+    assert_equal(inf.take(5).reduce(->(x,y)[x+y]), 0+3+6+9+12, 'no init');
+    setup();
+    assert_equal(inf.take(5).reduce(->(x,y)[x+y], 16), 16+0+3+6+9+12, 'init');
   }
   
   function test_lazy {

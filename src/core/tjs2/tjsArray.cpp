@@ -996,206 +996,32 @@ TJS_END_NATIVE_METHOD_DECL(/* func.name */clone)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */each)
 {
-    // plugins/scriptsEx
-    
-    if (numparams < 1) return TJS_E_BADPARAMCOUNT;
-
-    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
-    iTJSDispatch2 *fn = clo.Object;
-    iTJSDispatch2 *fn_this = clo.ObjThis;
-    if (!fn) return TJS_E_INVALIDPARAM;
-    if (!fn_this) {
-        fn_this = objthis;
-    }
-
-    tTJSVariant **paramList = new tTJSVariant*[numparams + 1];
-    /* paramList[0]  := item
-     * paramList[1]  := index
-     * paramList[..] := *args
-     */
-    tTJSVariant index;
-    paramList[1] = &index;
-    for (tjs_int i = 1; i < numparams; ++i)
-        paramList[i + 1] = param[i];
-    
-    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
-    tTJSArrayNI::tArrayItemIterator i;
-    tTJSVariant fn_ret;
-    tjs_int idx = 0;
-    for (i = ni->Items.begin(); i != ni->Items.end(); ++i) {
-        index = idx;
-        paramList[0] = &(*i);
-        (void)fn->FuncCall(0, NULL, NULL, &fn_ret, numparams + 1, paramList, fn_this);
-        idx += 1;
-    }
-
-    delete[] paramList;
-
-    return TJS_S_OK;
+    tTJSVariant self(objthis, objthis);
+    auto iter = TJSCreateArrayIterator(&self, nullptr);
+    tjs_error hr = iter->FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("each"), nullptr, result, numparams, param, iter);
+    iter->Release();
+    return hr;
 }
 TJS_END_NATIVE_METHOD_DECL(/* func.name */each)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */map)
-{
-    if (numparams < 1) return TJS_E_BADPARAMCOUNT;
-
-    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
-    iTJSDispatch2 *fn = clo.Object;
-    iTJSDispatch2 *fn_this = clo.ObjThis;
-    if (!fn) return TJS_E_INVALIDPARAM;
-    if (!fn_this) {
-        fn_this = objthis;
-    }
-
-    tTJSVariant **paramList = new tTJSVariant*[numparams + 1];
-    /* paramList[0]  := item
-     * paramList[1]  := index
-     * paramList[..] := *args
-     */
-    tTJSVariant index;
-    paramList[1] = &index;
-    for (tjs_int i = 1; i < numparams; ++i)
-        paramList[i + 1] = param[i];
-    
-    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
-    
-    tTJSArrayObject * array = (tTJSArrayObject*)TJSCreateArrayObject();
-    tTJSArrayNI * ni_map;
-    array->NativeInstanceSupport(TJS_NIS_GETINSTANCE, TJS_NATIVE_CLASSID_NAME, (iTJSNativeInstance**)&ni_map);
-
-    tTJSVariant fn_ret;
-    tjs_int idx = 0;
-    for (tTJSArrayNI::tArrayItemIterator i = ni->Items.begin(); i != ni->Items.end(); ++i) {
-        fn_ret.Clear();
-        index = idx;
-        paramList[0] = &(*i);
-        (void)fn->FuncCall(0, NULL, NULL, &fn_ret, numparams + 1, paramList, fn_this);
-        array->Add(ni_map, fn_ret);
-        idx += 1;
-    }
-    if (result) *result = tTJSVariant(array, array);
-    array->Release();
-
-    delete[] paramList;
-
-    return TJS_S_OK;
-}
-TJS_END_NATIVE_METHOD_DECL(/* func.name */map)
+#define TJS_ARRAY_ITERATOR_DELEGATE(funcname) \
+TJS_BEGIN_NATIVE_METHOD_DECL(funcname) \
+{ tTJSVariant self(objthis, objthis); \
+  auto iter = TJSCreateArrayIterator(&self, nullptr); \
+  tjs_error hr = iter->FuncCall(TJS_MEMBERMUSTEXIST, \
+    TJS_W(#funcname), nullptr, result, numparams, param, iter); \
+  iter->Release(); \
+  return hr; } \
+TJS_END_NATIVE_METHOD_DECL(funcname)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */filter)
-{
-    if (numparams < 1) return TJS_E_BADPARAMCOUNT;
-
-    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
-    iTJSDispatch2 *fn = clo.Object;
-    iTJSDispatch2 *fn_this = clo.ObjThis;
-    if (!fn) return TJS_E_INVALIDPARAM;
-    if (!fn_this) {
-        fn_this = objthis;
-    }
-
-    tTJSVariant **paramList = new tTJSVariant*[numparams + 1];
-    /* paramList[0]  := item
-     * paramList[1]  := index
-     * paramList[..] := *args
-     */
-    tTJSVariant index;
-    paramList[1] = &index;
-    for (tjs_int i = 1; i < numparams; ++i)
-        paramList[i + 1] = param[i];
-    
-    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
-
-    tTJSArrayObject * array = (tTJSArrayObject*)TJSCreateArrayObject();
-    tTJSArrayNI * ni_filter;
-    array->NativeInstanceSupport(TJS_NIS_GETINSTANCE, TJS_NATIVE_CLASSID_NAME, (iTJSNativeInstance**)&ni_filter);
-
-    tTJSVariant fn_ret;
-    tjs_int idx = 0;
-    for (tTJSArrayNI::tArrayItemIterator i = ni->Items.begin(); i != ni->Items.end(); ++i) {
-        fn_ret.Clear();
-        index = idx;
-        tTJSVariant *arg = &(*i);
-        paramList[0] = arg;
-        (void)fn->FuncCall(0, NULL, NULL, &fn_ret, numparams + 1, paramList, fn_this);
-        if (fn_ret.operator bool()) array->Add(ni_filter, *arg);
-        idx += 1;
-    }
-    if (result) *result = tTJSVariant(array, array);
-    array->Release();
-
-    delete[] paramList;
-
-    return TJS_S_OK;
-}
-TJS_END_NATIVE_METHOD_DECL(/* func.name */filter)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */reduce)
-{
-    if (numparams != 1 && numparams != 2) return TJS_E_BADPARAMCOUNT;
-
-    tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
-    iTJSDispatch2 *fn = clo.Object;
-    iTJSDispatch2 *fn_this = clo.ObjThis;
-    if (!fn) return TJS_E_INVALIDPARAM;
-    if (!fn_this) {
-        fn_this = objthis;
-    }
-
-    TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSArrayNI);
-    
-    if (ni->Items.empty() && numparams == 1) {
-        if (result) result->Clear();
-        return TJS_S_OK;
-    }
-
-    tTJSArrayNI::tArrayItemIterator i = ni->Items.begin();
-    tTJSVariant acc;
-    if (numparams == 1) {
-        // ni->Items is NOT empty!
-        acc = *i++;
-    } else {
-        acc = *param[1];
-    }
-
-    tTJSVariant **paramList = new tTJSVariant*[3];
-    /* paramList[0] := accumulator
-     * paramList[1] := item
-     * paramList[2] := index
-     */
-    
-    paramList[0] = &acc;
-    tTJSVariant index;
-    paramList[2] = &index;
-    
-    tjs_int idx = 0;
-    for (; i != ni->Items.end(); ++i) {
-        index = idx;
-        tTJSVariant *arg = &(*i);
-        paramList[1] = arg;
-        (void)fn->FuncCall(0, NULL, NULL, &acc, 3, paramList, fn_this);
-        idx += 1;
-    }
-    if (result) *result = acc;
-
-    delete[] paramList;
-
-    return TJS_S_OK;
-}
-TJS_END_NATIVE_METHOD_DECL(/* func.name */reduce)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/* func.name */__iter__)
-{
-	if (result) {
-		tTJSVariant self(objthis, objthis);
-		auto x = TJSCreateArrayIterator(&self, nullptr);
-		*result = tTJSVariant(x, x);
-		x->Release();
-		int a = 0;
-	}
-	return TJS_S_OK;
-}
-TJS_END_NATIVE_METHOD_DECL(/* func.name */__iter__)
+TJS_ARRAY_ITERATOR_DELEGATE(map)
+TJS_ARRAY_ITERATOR_DELEGATE(filter)
+TJS_ARRAY_ITERATOR_DELEGATE(reduce)
+TJS_ARRAY_ITERATOR_DELEGATE(drop)
+TJS_ARRAY_ITERATOR_DELEGATE(take)
+TJS_ARRAY_ITERATOR_DELEGATE(all)
+TJS_ARRAY_ITERATOR_DELEGATE(any)
+TJS_ARRAY_ITERATOR_DELEGATE(none)
 //----------------------------------------------------------------------
 
 

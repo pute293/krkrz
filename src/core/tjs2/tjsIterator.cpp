@@ -23,7 +23,542 @@ tTJSNC_Iterator				*Iterator = nullptr;
 tTJSNC_ArrayIterator		*ArrayIterator = nullptr;
 tTJSNC_DictionaryIterator	*DictionaryIterator = nullptr;
 tTJSNC_LazyIterator         *LazyIterator = nullptr;
+
+//---------------------------------------------------------------------------
+// Utility Functions
+//---------------------------------------------------------------------------
+inline tjs_error decompose(tTJSVariant *keyval, tTJSVariant *key, tTJSVariant *val)
+{
+	auto obj = keyval->AsObjectNoAddRef();
+	if (key) {
+		key->Clear();
+		tjs_error hr = obj->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 0, key, obj);
+		if (TJS_FAILED(hr)) return hr;
+	}
+	if (val) {
+		val->Clear();
+		tjs_error hr = obj->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 1, val, obj);
+		if (TJS_FAILED(hr)) return hr;
+	}
+	return TJS_S_OK;
 }
+//---------------------------------------------------------------------------
+#define TJS_ITERATOR_METHOD_DECL(name) \
+inline tjs_error name(tTJSVariant *result, tjs_int numparams, \
+tTJSVariant **param, iTJSIterator *ni, iTJSDispatch2 *objthis)
+
+#define TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList)	\
+	ParamList paramList(numparams + 1);					\
+	/* paramList[0]  := key								\
+	 * paramList[1]  := value							\
+	 * paramList[..] := *args */						\
+	tTJSVariant key, val;								\
+	paramList[0] = &key; paramList[1] = &val;			\
+	for (tjs_int i = 1; i < numparams; ++i)	paramList[i + 1] = param[i];
+//---------------------------------------------------------------------------
+
+// Each ---------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(Each)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+	
+	if (result) result->Clear();
+	
+	return ni->Each([&](tTJSVariant *item, tjs_int idx) {
+		paramList[0] = item;
+		paramList.UpdateIndex(idx);
+		return fn->FuncCall(0, nullptr, nullptr, nullptr, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// DictEach -----------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(DictEach)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
+	
+	if (result) result->Clear();
+	
+	return ni->Each([&](tTJSVariant *keyval, tjs_int idx) {
+		tjs_error hr = decompose(keyval, &key, &val);
+		if (TJS_FAILED(hr)) return hr;
+		return fn->FuncCall(0, nullptr, nullptr, nullptr, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// Map ----------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(Map)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+	return ni->Map(result, [&](tTJSVariant *map, tTJSVariant *item, tjs_int idx) {
+		paramList[0] = item;
+		paramList.UpdateIndex(idx);
+		return fn->FuncCall(0, nullptr, nullptr, map, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// DictMap ------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(DictMap)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
+	return ni->Map(result, [&](tTJSVariant *map, tTJSVariant *keyval, tjs_int idx) {
+		tjs_error hr = decompose(keyval, &key, &val);
+		if (TJS_FAILED(hr)) return hr;
+		return fn->FuncCall(0, nullptr, nullptr, map, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// Filter -------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(Filter)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+	return ni->Filter(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+		paramList[0] = item;
+		paramList.UpdateIndex(idx);
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// DictFilter --------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(DictFilter)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
+	return ni->Filter(result, [&](tTJSVariant *pred, tTJSVariant *keyval, tjs_int idx) {
+		tjs_error hr = decompose(keyval, &key, &val);
+		if (TJS_FAILED(hr)) return hr;
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// Reduce -------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(Reduce)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	
+	ParamList paramList(numparams + 2);
+	paramList.SetIndex(2, 0);
+	/* paramList[0]  := accumulator
+	 * paramList[1]  := current value
+	 * paramList[2]  := index
+	 * paramList[..] := *args */
+	for (tjs_int i = 2; i < numparams; ++i)	{
+		paramList[i + 1] = param[i];
+	}
+	
+	return ni->Reduce(result, 1 < numparams ? param[1] : nullptr,
+	[&](tTJSVariant *v, tTJSVariant *acc, tTJSVariant *cur, tjs_int idx) {
+		paramList[0] = acc;
+		paramList[1] = cur;
+		paramList.UpdateIndex(idx);
+		return fn->FuncCall(0, nullptr, nullptr, v, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// Drop ---------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(Drop)
+{
+	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
+	return ni->Drop(result, count);
+}
+// Take ---------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(Take)
+{
+	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
+	return ni->Take(result, count);
+}
+// All ----------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(All)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+	return ni->All(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+		paramList[0] = item;
+		paramList.UpdateIndex(idx);
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// DictAll ------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(DictAll)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
+	return ni->All(result, [&](tTJSVariant *pred, tTJSVariant *keyval, tjs_int idx) {
+		tjs_error hr = decompose(keyval, &key, &val);
+		if (TJS_FAILED(hr)) return hr;
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// Any ----------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(Any)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+	return ni->Any(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+		paramList[0] = item;
+		paramList.UpdateIndex(idx);
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// DictAny ------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(DictAny)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
+	return ni->Any(result, [&](tTJSVariant *pred, tTJSVariant *keyval, tjs_int idx) {
+		tjs_error hr = decompose(keyval, &key, &val);
+		if (TJS_FAILED(hr)) return hr;
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// None ---------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(None)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+	return ni->None(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+		paramList[0] = item;
+		paramList.UpdateIndex(idx);
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+// DictNone -----------------------------------------------------------------
+TJS_ITERATOR_METHOD_DECL(DictNone)
+{
+	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
+	return ni->None(result, [&](tTJSVariant *pred, tTJSVariant *keyval, tjs_int idx) {
+		tjs_error hr = decompose(keyval, &key, &val);
+		if (TJS_FAILED(hr)) return hr;
+		return fn->FuncCall(0, nullptr, nullptr, pred, paramList.Count, paramList.Params, fn_this);
+	});
+}
+//// DropWhile ----------------------------------------------------------------
+//TJS_ITERATOR_METHOD_DECL(DropWhile)
+//{
+//	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+//	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+//	return ni->DropWhile(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+//		return TJS_S_OK;
+//	});
+//}
+//// TakeWhile ----------------------------------------------------------------
+//TJS_ITERATOR_METHOD_DECL(TakeWhile)
+//{
+//	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+//	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+//	return ni->TakeWhile(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+//		return TJS_S_OK;
+//	});
+//}
+//// Find ---------------------------------------------------------------------
+//TJS_ITERATOR_METHOD_DECL(Find)
+//{
+//	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+//	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+//	return ni->Find(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+//		return TJS_S_OK;
+//	});
+//}
+//// FindIndex ----------------------------------------------------------------
+//TJS_ITERATOR_METHOD_DECL(FindIndex)
+//{
+//	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+//	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+//	return ni->FindIndex(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+//		return TJS_S_OK;
+//	});
+//}
+//// Pairwise -----------------------------------------------------------------
+//TJS_ITERATOR_METHOD_DECL(Pairwise)
+//{
+//	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
+//	return ni->Pairwise(result, count);
+//}
+//// Slice --------------------------------------------------------------------
+//TJS_ITERATOR_METHOD_DECL(Slice)
+//{
+//	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
+//	return ni->Slice(result, count);
+//}
+//// Reject -------------------------------------------------------------------
+//TJS_ITERATOR_METHOD_DECL(Reject)
+//{
+//	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
+//	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
+//	return ni->Reject(result, [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+//		return TJS_S_OK;
+//	});
+//}
+
+}
+
+
+
+
+//---------------------------------------------------------------------------
+// iTJSIterator
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::Each(action_t action)
+{
+	tTJSVariant next, item;
+	tjs_error hr = MoveNext(&next);
+	if (TJS_FAILED(hr)) return hr;
+	
+	tjs_int index = 0;
+	while (next.operator bool()) {
+		hr = GetCurrent(&item);
+		if (TJS_FAILED(hr)) return hr;
+		
+		hr = action(&item, index++);
+		if (TJS_FAILED(hr) || hr == TJS_S_FALSE) return hr;
+		// `TJS_S_FALSE` means "break"
+		
+		hr = MoveNext(&next);
+		if (TJS_FAILED(hr)) return hr;
+	}
+	return TJS_S_OK;
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::Map(tTJSVariant *result, func_t map)
+{
+	tTJSArrayObject *array = (tTJSArrayObject*)TJSCreateArrayObject();
+	tjs_uint32 add_hint = 0;
+	
+	tjs_error hr = Each([&](tTJSVariant *item, tjs_int idx) {
+		tTJSVariant r;
+		tjs_error hr = map(&r, item, idx);
+		if (TJS_FAILED(hr)) return hr;
+		tTJSVariant *pr = &r;
+		array->FuncCall(0, TJS_W("add"), &add_hint, nullptr, 1, &pr, array);
+		return hr;
+	});
+	
+	if (TJS_SUCCEEDED(hr) && result) *result = tTJSVariant(array, array);
+	array->Release();
+	return hr;
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::Filter(tTJSVariant *result, func_t pred)
+{
+	tTJSArrayObject *array = (tTJSArrayObject*)TJSCreateArrayObject();
+	tjs_uint32 add_hint = 0;
+	
+	tjs_error hr = Each([&](tTJSVariant *item, tjs_int idx) {
+		tTJSVariant r;
+		tjs_error hr = pred(&r, item, idx);
+		if (TJS_FAILED(hr)) return hr;
+		if (r.operator bool())
+			array->FuncCall(0, TJS_W("add"), &add_hint, nullptr, 1, &item, array);
+		return hr;
+	});
+	
+	if (TJS_SUCCEEDED(hr) && result) *result = tTJSVariant(array, array);
+	array->Release();
+	return hr;
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::Reduce(tTJSVariant *result, tTJSVariant *init, reduce_t proc)
+{
+	/**
+	 * 1. init given
+	 *   1.1. empty iterator => return init
+	 *   1.2  else => procedure call
+	 * 2. init not given
+	 *   2.1. empty iterator => return void
+	 *   2.2. single iterator => return it
+	 *   2.3. else => procedure call
+	 */
+	
+	tTJSVariant next, item;
+	tjs_error hr = MoveNext(&next);
+	if (TJS_FAILED(hr)) return hr;
+	
+	if (!next.operator bool() || hr == TJS_S_FALSE) {
+		// 1.1.
+		// 2.1.
+		if (result) {
+			if (init) *result = *init;
+			else result->Clear();
+		}
+		return TJS_S_OK;
+	}
+	
+	tTJSVariant acc, cur;
+	tjs_int index = 0;
+	
+	if (init) {
+		// 1.2.
+		acc = *init;
+	} else {
+		hr = GetCurrent(&acc);
+		if (TJS_FAILED(hr)) return hr;
+		hr = MoveNext(&next);
+		if (TJS_FAILED(hr)) return hr;
+		if (!next.operator bool() || hr == TJS_S_FALSE) {
+			// 2.2.
+			if (result) *result = acc;
+			return TJS_S_OK;
+		}
+		// 2.3.
+	}
+	
+	tTJSVariant v;
+	do {
+		hr = GetCurrent(&cur);
+		if (TJS_FAILED(hr)) return hr;
+		hr = proc(&v, &acc, &cur, index++);
+		if (TJS_FAILED(hr)) return hr;
+		if (hr == TJS_S_FALSE) break;
+		acc = v;
+		hr = MoveNext(&next);
+		if (TJS_FAILED(hr)) return hr;
+	} while (next.operator bool() && hr != TJS_S_FALSE);
+	
+	if (result) *result = v;
+	return TJS_S_OK;
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::Drop(tTJSVariant *result, tTVInteger count)
+{
+	auto proc = [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+		*pred = count <= idx;
+		return TJS_S_OK;
+	};
+	return Filter(result, proc);
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::Take(tTJSVariant *result, tTVInteger count)
+{
+	auto proc = [&](tTJSVariant *pred, tTJSVariant *item, tjs_int idx) {
+		*pred = idx < count;
+		return count <= idx + 1 ? TJS_S_FALSE : TJS_S_OK;
+	};
+	return Filter(result, proc);
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::All(tTJSVariant *result, func_t pred)
+{
+	bool ret = true;
+	auto proc = [&](tTJSVariant *item, tjs_int idx) {
+		tTJSVariant v;
+		tjs_error hr = pred(&v, item, idx);
+		if (TJS_FAILED(hr)) return hr;
+		if (!v.operator bool()) {
+			ret = false;
+			return TJS_S_FALSE;
+		}
+		return TJS_S_OK;
+	};
+	
+	tjs_error hr = Each(proc);
+	if (TJS_FAILED(hr)) {
+		if (result) result->Clear();
+		return hr;
+	} else {
+		if (result) *result = ret;
+		return TJS_S_OK;
+	}
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::Any(tTJSVariant *result, func_t pred)
+{
+	bool ret = false;
+	auto proc = [&](tTJSVariant *item, tjs_int idx) {
+		tTJSVariant v;
+		tjs_error hr = pred(&v, item, idx);
+		if (TJS_FAILED(hr)) return hr;
+		if (v.operator bool()) {
+			ret = true;
+			return TJS_S_FALSE;
+		}
+		return TJS_S_OK;
+	};
+	
+	tjs_error hr = Each(proc);
+	if (TJS_FAILED(hr)) {
+		if (result) result->Clear();
+		return hr;
+	} else {
+		if (result) *result = ret;
+		return TJS_S_OK;
+	}
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+iTJSIterator::None(tTJSVariant *result, func_t pred)
+{
+	bool ret = true;
+	auto proc = [&](tTJSVariant *item, tjs_int idx) {
+		tTJSVariant v;
+		tjs_error hr = pred(&v, item, idx);
+		if (TJS_FAILED(hr)) return hr;
+		if (v.operator bool()) {
+			ret = false;
+			return TJS_S_FALSE;
+		}
+		return TJS_S_OK;
+	};
+	
+	tjs_error hr = Each(proc);
+	if (TJS_FAILED(hr)) {
+		if (result) result->Clear();
+		return hr;
+	} else {
+		if (result) *result = ret;
+		return TJS_S_OK;
+	}
+}
+//---------------------------------------------------------------------------
+//tjs_error TJS_INTF_METHOD
+//iTJSIterator::DropWhile(tTJSVariant *result, func_t pred)
+//{
+//	return TJS_S_OK;
+//}
+////---------------------------------------------------------------------------
+//tjs_error TJS_INTF_METHOD
+//iTJSIterator::TakeWhile(tTJSVariant *result, func_t pred)
+//{
+//	return TJS_S_OK;
+//}
+////---------------------------------------------------------------------------
+//tjs_error TJS_INTF_METHOD
+//iTJSIterator::Find(tTJSVariant *result, func_t pred)
+//{
+//	return TJS_S_OK;
+//}
+////---------------------------------------------------------------------------
+//tjs_error TJS_INTF_METHOD
+//iTJSIterator::FindIndex(tTJSVariant *result, func_t pred)
+//{
+//	return TJS_S_OK;
+//}
+////---------------------------------------------------------------------------
+//tjs_error TJS_INTF_METHOD
+//iTJSIterator::Pairwise(tTJSVariant *result, tTVInteger count)
+//{
+//	return TJS_S_OK;
+//}
+////---------------------------------------------------------------------------
+//tjs_error TJS_INTF_METHOD
+//iTJSIterator::Slice(tTJSVariant *result, tTVInteger count)
+//{
+//	return TJS_S_OK;
+//}
+////---------------------------------------------------------------------------
+//tjs_error TJS_INTF_METHOD
+//iTJSIterator::Reject(tTJSVariant *result, func_t pred)
+//{
+//	return TJS_S_OK;
+//}
+////---------------------------------------------------------------------------
+
+
 
 //---------------------------------------------------------------------------
 // tTJSNI_Iterator : TJS Native Instance : Iterator
@@ -32,12 +567,77 @@ tTJSNI_Iterator::tTJSNI_Iterator()
 {
 }
 //---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+tTJSNI_Iterator::Construct(tjs_int numparams, tTJSVariant **param, iTJSDispatch2 *tjs_obj)
+{
+	BackEnd = tjs_obj;
+	//BackEnd->AddRef();
+	return inherited::Construct(numparams, param, tjs_obj);
+}
+//---------------------------------------------------------------------------
+void TJS_INTF_METHOD
+tTJSNI_Iterator::Destruct()
+{
+	//BackEnd->Release();
+	return inherited::Destruct();
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+tTJSNI_Iterator::GetCurrent(tTJSVariant *result)
+{
+	if (Index < 0) return TJS_E_INVALIDTYPE;
+	tjs_error hr = TJS_S_OK;
+	if (!IsCached) {
+		hr = BackEnd->FuncCall(0, TJS_W("current"), &CurrentHint, &CachedItem, 0, nullptr, BackEnd);
+		if (TJS_FAILED(hr)) return hr;
+		IsCached = true;
+	}
+	if (result) *result = CachedItem;
+	return hr;
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+tTJSNI_Iterator::MoveNext(tTJSVariant *result)
+{
+	Index += 1;
+	IsCached = false;
+	return BackEnd->FuncCall(0, TJS_W("moveNext"), &NextHint, result, 0, nullptr, BackEnd);
+}
+//---------------------------------------------------------------------------
+
+
+#define TJS_ITERATOR_METHOD_DELEGATE(methodname, funcname, classname) \
+TJS_BEGIN_NATIVE_METHOD_DECL(methodname) \
+{ \
+TJS_GET_NATIVE_INSTANCE(_this, classname); \
+return ::funcname(result, numparams, param, _this, objthis); \
+} \
+TJS_END_NATIVE_METHOD_DECL(methodname)
+
+#define TJS_ITERATOR_METHOD_DELEGATE_ALL(classname) \
+TJS_ITERATOR_METHOD_DELEGATE(each, Each, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(map, Map, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(filter, Filter, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(reduce, Reduce, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(drop, Drop, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(take, Take, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(all, All, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(any, Any, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(none, None, classname) /*\
+TJS_ITERATOR_METHOD_DELEGATE(dropWhile, DropWhile, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(takeWhile, TakeWhile, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(find, Find, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(findIndex, FindIndex, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(pairwise, Pairwise, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(slice, Slice, classname) \
+TJS_ITERATOR_METHOD_DELEGATE(reject, Reject, classname) */
+//TJS_ITERATOR_METHOD_DELEGATE(zip, Zip, classname)
 
 //---------------------------------------------------------------------------
 // tTJSNC_Iterator : TJS Native Class : Iterator
 //---------------------------------------------------------------------------
 tjs_uint32 tTJSNC_Iterator::ClassID = (tjs_uint32)-1;
-
+//---------------------------------------------------------------------------
 // call from ONLY tjs.cpp!
 tTJSNC_Iterator::tTJSNC_Iterator()
 	: inherited(TJS_W("Iterator"))
@@ -113,6 +713,8 @@ TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/moveNext)
 }
 TJS_END_NATIVE_METHOD_DECL(/*func. name*/moveNext)
 //----------------------------------------------------------------------
+TJS_ITERATOR_METHOD_DELEGATE_ALL(tTJSNI_Iterator)
+//----------------------------------------------------------------------
 	TJS_END_NATIVE_MEMBERS
 }
 //----------------------------------------------------------------------
@@ -133,6 +735,7 @@ tTJSNativeInstance *tTJSNC_Iterator::CreateNativeInstance()
 	return new tTJSNI_Iterator(); 
 }
 //----------------------------------------------------------------------
+
 
 
 //---------------------------------------------------------------------------
@@ -161,135 +764,29 @@ tTJSNI_ArrayIterator::Destruct() {
 	inherited::Destruct();
 }
 //---------------------------------------------------------------------------
-template<typename Action>
-tjs_error tTJSNI_ArrayIterator::Each(tTJSVariant *result,
-								iTJSDispatch2 *objthis, Action action)
+tjs_error TJS_INTF_METHOD
+tTJSNI_ArrayIterator::GetCurrent(tTJSVariant *result)
 {
-	tTJSVariant move_next;
-	tTJSVariant item;
-	
-	tjs_uint32 move_next_hint = 0;
-	tjs_uint32 current_hint = 0;
-	
-	bool break_now = false;
-	tjs_int idx = 0;
-	move_next.Clear();
-	objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
-	while (move_next.operator bool()) {
-		item.Clear();
-		(void)objthis->FuncCall(0, TJS_W("current"), &current_hint, &item, 0, nullptr, objthis);
-		
-		action(&item, idx, &break_now);
-		if (break_now) break;
-		
-		idx += 1;
-		move_next.Clear();
-		objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
+	if (Index < 0) return TJS_E_INVALIDTYPE;
+	if (!result) return TJS_S_OK;
+	return BackEnd->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, Index, result, BackEnd);
+}
+//---------------------------------------------------------------------------
+tjs_error TJS_INTF_METHOD
+tTJSNI_ArrayIterator::MoveNext(tTJSVariant *result)
+{
+	tTJSVariant count;
+	BackEnd->PropGet(0, TJS_W("count"), &CountHint, &count, BackEnd);
+	if (Index + 1 < (tjs_int)count) {
+		Index += 1;
+		if (result) *result = (tjs_int)1;
+		return TJS_S_OK;
 	}
-	if (result) result->Clear();
-	
+	if (result) *result = (tjs_int)0;
 	return TJS_S_OK;
 }
 //---------------------------------------------------------------------------
-template<typename Action>
-tjs_error tTJSNI_ArrayIterator::FilterMap(tTJSVariant *result,
-									iTJSDispatch2 *objthis, Action action)
-{
-	tTJSVariant move_next;
-	tTJSVariant item;
-	tTJSVariant mapped_item;
-	tTJSVariant *mapped_param = &mapped_item;
-	bool pred;
-	
-	tjs_uint32 move_next_hint = 0;
-	tjs_uint32 current_hint = 0;
-	
-	bool break_now = false;
-	tjs_int idx = 0;
-	tTJSArrayObject *array = (tTJSArrayObject*)TJSCreateArrayObject();
-	tjs_uint32 add_hint = 0;
-	
-	move_next.Clear();
-	objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
-	while (move_next.operator bool()) {
-		item.Clear();
-		(void)objthis->FuncCall(0, TJS_W("current"), &current_hint, &item, 0, nullptr, objthis);
-		
-		pred = true;
-		mapped_item.Clear();
-		action(&item, &mapped_item, idx, &pred, &break_now);
-		if (pred) array->FuncCall(0, TJS_W("add"), &add_hint, nullptr, 1, &mapped_param, array);
-		if (break_now) break;
-		
-		idx += 1;
-		move_next.Clear();
-		objthis->FuncCall(0, TJS_W("moveNext"), nullptr, &move_next, 0, nullptr, objthis);
-	}
-	if (result) *result = tTJSVariant(array, array);
-	array->Release();
-	
-	return TJS_S_OK;
-}
-//---------------------------------------------------------------------------
-template<typename Action>
-tjs_error tTJSNI_ArrayIterator::Reduce(tTJSVariant *result, tTJSVariant *init, iTJSDispatch2 *objthis, Action action)
-{
-	tTJSVariant move_next;
-	tTJSVariant item;
-	tTJSVariant *prev_accumulator;
-	tTJSVariant accumulator;
-	
-	tjs_uint32 move_next_hint = 0;
-	tjs_uint32 current_hint = 0;
-	
-	move_next.Clear();
-	objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
-	if (init) {
-		if (!move_next.operator bool()) {
-			if (result) {
-				*result = tTJSVariant(*init, *init);
-				init->Release();
-			}
-			return TJS_S_OK;
-		}
-		prev_accumulator = init;
-	} else {
-		if (!move_next.operator bool()) {
-			if (result) result->Clear();
-			return TJS_S_OK;
-		}
-		objthis->FuncCall(0, TJS_W("current"), &current_hint, &prev_accumulator, 0, nullptr, objthis);
-		move_next.Clear();
-		objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
-		if (!move_next.operator bool()) {
-			if (result) *result = *prev_accumulator;
-			return TJS_S_OK;
-		}
-	}
-	
-	bool break_now = false;
-	tjs_int idx = 0;
-	
-	do {
-		item.Clear();
-		objthis->FuncCall(0, TJS_W("current"), &current_hint, &item, 0, nullptr, objthis);
-		
-		accumulator.Clear();
-		action(&accumulator, prev_accumulator, &item, idx, &break_now);
-		if (break_now) break;
-		
-		idx += 1;
-		*prev_accumulator = accumulator;
-		move_next.Clear();
-		objthis->FuncCall(0, TJS_W("moveNext"), nullptr, &move_next, 0, nullptr, objthis);
-	} while (has_next.operator bool());
-	
-	if (result) *result = tTJSVariant(accumulator, accumulator);
-	accumulator.Release();
-	
-	return TJS_S_OK;
-}
-//----------------------------------------------------------------------
+
 
 
 //---------------------------------------------------------------------------
@@ -330,194 +827,12 @@ TJS_END_NATIVE_METHOD_DECL(/*func. name*/current)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/moveNext)
 {
-	if(result) {
-		TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-		*result = _this->MoveNext();
-	}
-	return TJS_S_OK;
+	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
+	return _this->MoveNext(result);
 }
 TJS_END_NATIVE_METHOD_DECL(/*func. name*/moveNext)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/each)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
-	
-	auto action = [&](tTJSVariant *item, tjs_int idx, bool *break_now) {
-		paramList[0] = item;
-		paramList.UpdateIndex(idx);
-		(void)fn->FuncCall(0, nullptr, nullptr, nullptr, paramList.Count, paramList.Params, fn_this);
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	tjs_error hr = _this->Each(result, objthis, action);
-	
-	return hr;
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/each)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/map)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
-	
-	auto action = [&](tTJSVariant *item, tTJSVariant *map, tjs_int idx, bool *pred, bool *break_now) {
-		paramList[0] = item;
-		paramList.UpdateIndex(idx);
-		(void)fn->FuncCall(0, nullptr, nullptr, map, paramList.Count, paramList.Params, fn_this);
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/map)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/filter)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
-	
-	auto action = [&](tTJSVariant *item, tTJSVariant *map, tjs_int idx, bool *pred, bool *break_now) {
-		paramList[0] = item;
-		paramList.UpdateIndex(idx);
-		tTJSVariant _pred;
-		_pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &_pred, paramList.Count, paramList.Params, fn_this);
-		*pred = _pred.operator bool();
-		if (*pred) *map = *item;
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/filter)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/drop)
-{
-	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
-	auto action = [&](tTJSVariant *item, tTJSVariant *map, tjs_int idx, bool *pred, bool *break_now) {
-		*pred = count <= idx;
-		if (*pred) *map = *item;
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/drop)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/take)
-{
-	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
-	
-	if (count <= 0) {
-		if (result) {
-			tTJSArrayObject *array = (tTJSArrayObject*)TJSCreateArrayObject();
-			*result = tTJSVariant(array, array);
-			array->Release();
-		}
-		return TJS_S_OK;
-	}
-	
-	count -= 1;
-	auto action = [&](tTJSVariant *item, tTJSVariant *map, tjs_int idx, bool *pred, bool *break_now) {
-		if (count == idx) *break_now = true;
-		*map = *item;
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/take)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/all)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
-	
-	bool ret = true;
-	auto action = [&](tTJSVariant *item, tjs_int idx, bool *break_now) {
-		paramList[0] = item;
-		paramList.UpdateIndex(idx);
-		tTJSVariant pred;
-		pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &pred, paramList.Count, paramList.Params, fn_this);
-		if (!pred.operator bool()) {
-			ret = false;
-			*break_now = true;
-		}
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	tjs_error hr = _this->Each(result, objthis, action);
-	
-	if (hr == TJS_S_OK) {
-		if (result) *result = tTJSVariant(ret);
-		return TJS_S_OK;
-	} else {
-		return hr;
-	}
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/all)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/any)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
-	
-	bool ret = false;
-	auto action = [&](tTJSVariant *item, tjs_int idx, bool *break_now) {
-		paramList[0] = item;
-		paramList.UpdateIndex(idx);
-		tTJSVariant pred;
-		pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &pred, paramList.Count, paramList.Params, fn_this);
-		if (pred.operator bool()) {
-			ret = true;
-			*break_now = true;
-		}
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	tjs_error hr = _this->Each(result, objthis, action);
-	
-	if (hr == TJS_S_OK) {
-		if (result) *result = tTJSVariant(ret);
-		return TJS_S_OK;
-	} else {
-		return hr;
-	}
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/any)
-//----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/none)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_ARRAY_PARAMLIST(paramList);
-	
-	bool ret = true;
-	auto action = [&](tTJSVariant *item, tjs_int idx, bool *break_now) {
-		paramList[0] = item;
-		paramList.UpdateIndex(idx);
-		tTJSVariant pred;
-		pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &pred, paramList.Count, paramList.Params, fn_this);
-		if (pred.operator bool()) {
-			ret = false;
-			*break_now = true;
-		}
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_ArrayIterator);
-	tjs_error hr = _this->Each(result, objthis, action);
-	
-	if (hr == TJS_S_OK) {
-		if (result) *result = tTJSVariant(ret);
-		return TJS_S_OK;
-	} else {
-		return hr;
-	}
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/none)
+TJS_ITERATOR_METHOD_DELEGATE_ALL(tTJSNI_ArrayIterator)
 //----------------------------------------------------------------------
 	TJS_END_NATIVE_MEMBERS
 }
@@ -526,6 +841,8 @@ tTJSNativeInstance *tTJSNC_ArrayIterator::CreateNativeInstance()
 {
 	return new tTJSNI_ArrayIterator(); 
 }
+//----------------------------------------------------------------------
+
 
 
 //---------------------------------------------------------------------------
@@ -562,20 +879,22 @@ tTJSNI_DictionaryIterator::Destruct()
 	inherited::Destruct();
 }
 //---------------------------------------------------------------------------
-tjs_error tTJSNI_DictionaryIterator::GetCurrent(tTJSVariant *val)
+tjs_error TJS_INTF_METHOD
+tTJSNI_DictionaryIterator::GetCurrent(tTJSVariant *result)
 {
 	if (!CurrentKey) {
 		// `moveNext()` is not called yet
-		val->Clear();
-		return TJS_S_OK;
+		return TJS_E_INVALIDTYPE;
 	}
 	
-	if (GetPair(CurrentKey, val) == TJS_S_OK) return TJS_S_OK;
+	if (!result) return TJS_S_OK;
+	
+	if (GetPair(CurrentKey, result) == TJS_S_OK) return TJS_S_OK;
 	
 	// CurrentKey is now invalidated; find next key
 	delete[] CurrentKey;
 	for (const tjs_char *key : CachedKeys) {
-		if (GetPair(key, val) == TJS_S_OK) {
+		if (GetPair(key, result) == TJS_S_OK) {
 			CurrentKey = new tjs_char[TJS_strlen(key)+1];
 			TJS_strcpy(CurrentKey, key);
 			CachedKeys.erase(key);
@@ -585,12 +904,13 @@ tjs_error tTJSNI_DictionaryIterator::GetCurrent(tTJSVariant *val)
 	}
 	
 	// not found (error)
-	val->Clear();
+	result->Clear();
 	CurrentKey = nullptr;
 	return TJS_E_MEMBERNOTFOUND;
 }
 //---------------------------------------------------------------------------
-bool tTJSNI_DictionaryIterator::MoveNext(void)
+tjs_error TJS_INTF_METHOD
+tTJSNI_DictionaryIterator::MoveNext(tTJSVariant *result)
 {
 	if (CachedKeys.empty() && !UpdateKeys()) {
 		// exhausted
@@ -598,7 +918,8 @@ bool tTJSNI_DictionaryIterator::MoveNext(void)
 			VisitedKeys.insert(CurrentKey);
 			CurrentKey = nullptr;
 		}
-		return false;
+		if (result) *result = (tjs_int)0;
+		return TJS_S_OK;
 	}
 	tTJSVariant dummy;
 	if (CurrentKey) VisitedKeys.insert(CurrentKey);
@@ -608,11 +929,13 @@ bool tTJSNI_DictionaryIterator::MoveNext(void)
 			TJS_strcpy(CurrentKey, key);
 			CachedKeys.erase(key);
 			delete[] key;
-			return true;
+			if (result) *result = (tjs_int)1;
+			return TJS_S_OK;
 		}
 	}
 	CurrentKey = nullptr;
-	return false;
+	if (result) *result = (tjs_int)0;
+	return TJS_S_OK;
 }
 //---------------------------------------------------------------------------
 bool tTJSNI_DictionaryIterator::UpdateKeys(void)
@@ -672,113 +995,102 @@ tjs_error tTJSNI_DictionaryIterator::GetPair(const tjs_char *key, tTJSVariant *r
 	return TJS_S_OK;
 }
 //---------------------------------------------------------------------------
-template<typename Action>
-tjs_error tTJSNI_DictionaryIterator::Each(tTJSVariant *result,
-								iTJSDispatch2 *objthis, Action action)
+tjs_error TJS_INTF_METHOD
+tTJSNI_DictionaryIterator::Each(action_t action)
 {
-	tTJSVariant move_next;
-	tTJSVariant keyval, key, val;
-	tjs_uint32 move_next_hint = 0;
-	tjs_uint32 current_hint = 0;
+	tTJSVariant next;
+	tTJSVariant keyval;
 	
-	bool break_now = false;
-	move_next.Clear();
-	objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
-	while (move_next.operator bool()) {
-		keyval.Clear();
-		objthis->FuncCall(0, TJS_W("current"), &current_hint, &keyval, 0, nullptr, objthis);
+	tjs_error hr = MoveNext(&next);
+	if (TJS_FAILED(hr)) return hr;
+	
+	tjs_int index = 0;
+	while (next.operator bool()) {
+		hr = GetCurrent(&keyval);
+		if (TJS_FAILED(hr)) return hr;
 		
-		auto clo = keyval.AsObjectNoAddRef();
-		clo->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 0, &key, clo);
-		clo->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 1, &val, clo);
+		hr = action(&keyval, index++);
+		if (TJS_FAILED(hr) || hr == TJS_S_FALSE) return hr;
+		// `TJS_S_FALSE` means "break"
 		
-		action(&key, &val, &break_now);
-		if (break_now) break;
-		
-		move_next.Clear();
-		objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
+		hr = MoveNext(&next);
+		if (TJS_FAILED(hr)) return hr;
 	}
-	if (result) result->Clear();
-	
 	return TJS_S_OK;
 }
 //---------------------------------------------------------------------------
-template<typename Action>
-tjs_error tTJSNI_DictionaryIterator::FilterMap(tTJSVariant *result,
-									iTJSDispatch2 *objthis, Action action)
+tjs_error TJS_INTF_METHOD
+tTJSNI_DictionaryIterator::Map(tTJSVariant *result, func_t map)
 {
-	tTJSVariant move_next;
-	tTJSVariant keyval, key, val;
-	tTJSVariant mapped_item;
-	tTJSVariant count;  // count of returned array
-	tjs_uint32 move_next_hint = 0;
-	tjs_uint32 current_hint = 0;
-	tjs_uint32 count_hint = 0;
-	
-	bool break_now = false;
-	bool pred;
 	tTJSDictionaryObject *dict = (tTJSDictionaryObject*)TJSCreateDictionaryObject();
 	
-	move_next.Clear();
-	objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
-	while (move_next.operator bool()) {
-		keyval.Clear();
-		objthis->FuncCall(0, TJS_W("current"), &current_hint, &keyval, 0, nullptr, objthis);
+	tjs_error hr = Each([&](tTJSVariant *keyval, tjs_int idx) {
+		tTJSVariant r;
+		tjs_error hr = map(&r, keyval, idx);
+		if (TJS_FAILED(hr)) return hr;
 		
-		auto kv = keyval.AsObjectNoAddRef();
-		kv->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 0, &key, kv);
-		kv->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 1, &val, kv);
-		
-		pred = true;
-		action(&key, &val, &mapped_item, &pred, &break_now);
-		if (pred) {
-			// If map operation returns
-			// - Array object:
-			//     It will be treated as [key, value] pair.
-			//     If the object has only one element, it will be treated as [key, void].
-			//     If the object is empty, this iteration will be ignored.
-			// - Other Object:
-			//     It will be treated as a new value with same key.
-			if (TJS_S_TRUE == TJSDefaultIsInstanceOf(0, mapped_item, TJS_W("Array"), nullptr)) {
-				auto clo = mapped_item.AsObjectNoAddRef();
-				clo->PropGet(0, TJS_W("count"), &count_hint, &count, clo);
-				if (count.AsInteger() != 0) {
-					key.Clear(); val.Clear();
-					clo->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 0, &key, clo);
-					clo->PropGetByNum(TJS_MEMBERMUSTEXIST|TJS_IGNOREPROP, 1, &val, clo);
-					
-					auto keystr = key.AsString();
-					dict->PropSet(TJS_MEMBERENSURE|TJS_IGNOREPROP, *keystr, nullptr, &val, dict);
-					keystr->Release();
-				}
-			} else {
-				dict->PropSet(TJS_MEMBERENSURE|TJS_IGNOREPROP, key.GetString(), nullptr, &mapped_item, dict);
-			}
+		/* If map operation returns
+		 * - Array object:
+		 *     It will be treated as [key, value] pair.
+		 *     If the object has only one element, it will be treated as [key, void].
+		 *     If the object is empty, this iteration will be ignored.
+		 * - Other Object:
+		 *     It will be treated as a new value with same key.
+		 */
+		tTJSVariant key, val;
+		if (TJS_S_TRUE == TJSDefaultIsInstanceOf(0, r, TJS_W("Array"), nullptr)) {
+			tjs_error hr = decompose(&r, &key, &val);
+			if (TJS_FAILED(hr)) return hr;
+			
+			auto keystr = key.AsString();
+			dict->PropSet(TJS_MEMBERENSURE|TJS_IGNOREPROP, *keystr, nullptr, &val, dict);
+			keystr->Release();
+		} else {
+			tjs_error hr = decompose(keyval, &key, nullptr);
+			if (TJS_FAILED(hr)) return hr;
+			dict->PropSet(TJS_MEMBERENSURE|TJS_IGNOREPROP, key.GetString(), nullptr, &r, dict);
 		}
-		if (break_now) break;
-		
-		move_next.Clear();
-		objthis->FuncCall(0, TJS_W("moveNext"), &move_next_hint, &move_next, 0, nullptr, objthis);
-	}
+		return TJS_S_OK;
+	});
+	
 	if (result) *result = tTJSVariant(dict, dict);
 	dict->Release();
-	
 	return TJS_S_OK;
 }
 //---------------------------------------------------------------------------
-template<typename Action>
-tjs_error tTJSNI_DictionaryIterator::Reduce(tTJSVariant *result, tTJSVariant *init, iTJSDispatch2 *objthis, Action action)
+tjs_error TJS_INTF_METHOD
+tTJSNI_DictionaryIterator::Filter(tTJSVariant *result, func_t pred)
 {
+	tTJSDictionaryObject *dict = (tTJSDictionaryObject*)TJSCreateDictionaryObject();
+	
+	tjs_error hr = Each([&](tTJSVariant *keyval, tjs_int idx) {
+		tTJSVariant r;
+		tjs_error hr = pred(&r, keyval, idx);
+		if (TJS_FAILED(hr)) return hr;
+		if (r.operator bool()) {
+			tTJSVariant key, val;
+			tjs_error hr = decompose(keyval, &key, &val);
+			if (TJS_FAILED(hr)) return hr;
+			auto keystr = key.AsString();
+			dict->PropSet(TJS_MEMBERENSURE|TJS_IGNOREPROP, *keystr, nullptr, &val, dict);
+			keystr->Release();
+		}
+		return hr;
+	});
+	
+	if (result) *result = tTJSVariant(dict, dict);
+	dict->Release();
 	return TJS_S_OK;
 }
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
 
 
 //---------------------------------------------------------------------------
 // tTJSNC_DictionaryIterator : TJS Native Class : DictionaryIterator
 //---------------------------------------------------------------------------
 tjs_uint32 tTJSNC_DictionaryIterator::ClassID = (tjs_uint32)-1;
-
+//---------------------------------------------------------------------------
 // call from ONLY tjs.cpp!
 tTJSNC_DictionaryIterator::tTJSNC_DictionaryIterator()
 	: inherited(TJS_W("DictionaryIterator"))
@@ -812,200 +1124,28 @@ TJS_END_NATIVE_METHOD_DECL(/*func. name*/current)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/moveNext)
 {
-	if(result) {
-		TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-		*result = _this->MoveNext();
-	}
-	return TJS_S_OK;
+	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
+	return _this->MoveNext(result);
 }
 TJS_END_NATIVE_METHOD_DECL(/*func. name*/moveNext)
 //----------------------------------------------------------------------
-#define TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList)	\
-	ParamList paramList(numparams + 1);					\
-	/* paramList[0]  := key								\
-	 * paramList[1]  := valye							\
-	 * paramList[..] := *args */						\
-	for (tjs_int i = 1; i < numparams; ++i)	paramList[i + 1] = param[i];
+TJS_ITERATOR_METHOD_DELEGATE(each, DictEach, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/each)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
-	
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, bool *break_now) {
-		paramList[0] = key;
-		paramList[1] = val;
-		(void)fn->FuncCall(0, nullptr, nullptr, nullptr, paramList.Count, paramList.Params, fn_this);
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	return _this->Each(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/each)
+TJS_ITERATOR_METHOD_DELEGATE(map, DictMap, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/map)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
-	
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, tTJSVariant *map, bool *pred, bool *break_now) {
-		paramList[0] = key;
-		paramList[1] = val;
-		(void)fn->FuncCall(0, nullptr, nullptr, map, paramList.Count, paramList.Params, fn_this);
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/map)
+TJS_ITERATOR_METHOD_DELEGATE(filter, DictFilter, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/filter)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
-	
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, tTJSVariant *map, bool *pred, bool *break_now) {
-		paramList[0] = key;
-		paramList[1] = val;
-		tTJSVariant _pred;
-		_pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &_pred, paramList.Count, paramList.Params, fn_this);
-		*pred = _pred.operator bool();
-		if (*pred) *map = *val;
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/filter)
+TJS_ITERATOR_METHOD_DELEGATE(reduce, Reduce, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/drop)
-{
-	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, tTJSVariant *map, bool *pred, bool *break_now) {
-		count -= 1;
-		*pred = 0 <= count;
-		if (*pred) *map = *val;
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/drop)
+TJS_ITERATOR_METHOD_DELEGATE(drop, Drop, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/take)
-{
-	TJS_ITERATOR_PREPARE_INT_PARAMLIST(paramList, count);
-	
-	if (count <= 0) {
-		if (result) {
-			tTJSDictionaryObject *dict = (tTJSDictionaryObject*)TJSCreateDictionaryObject();
-			*result = tTJSVariant(dict, dict);
-			dict->Release();
-		}
-		return TJS_S_OK;
-	}
-	
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, tTJSVariant *map, bool *pred, bool *break_now) {
-		*map = *val;
-		count -= 1;
-		if (count == 0) *break_now = true;
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	return _this->FilterMap(result, objthis, action);
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/take)
+TJS_ITERATOR_METHOD_DELEGATE(take, Take, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/all)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
-	
-	bool ret = true;
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, bool *break_now) {
-		paramList[0] = key;
-		paramList[1] = val;
-		tTJSVariant pred;
-		pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &pred, paramList.Count, paramList.Params, fn_this);
-		if (!pred.operator bool()) {
-			ret = false;
-			*break_now = true;
-		}
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	tjs_error hr = _this->Each(result, objthis, action);
-	
-	if (hr == TJS_S_OK) {
-		if (result) *result = tTJSVariant(ret);
-		return TJS_S_OK;
-	} else {
-		return hr;
-	}
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/all)
+TJS_ITERATOR_METHOD_DELEGATE(all, DictAll, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/any)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
-	
-	bool ret = false;
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, bool *break_now) {
-		paramList[0] = key;
-		paramList[1] = val;
-		tTJSVariant pred;
-		pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &pred, paramList.Count, paramList.Params, fn_this);
-		if (pred.operator bool()) {
-			ret = true;
-			*break_now = true;
-		}
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	tjs_error hr = _this->Each(result, objthis, action);
-	
-	if (hr == TJS_S_OK) {
-		if (result) *result = tTJSVariant(ret);
-		return TJS_S_OK;
-	} else {
-		return hr;
-	}
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/any)
+TJS_ITERATOR_METHOD_DELEGATE(any, DictAny, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
-TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/none)
-{
-	TJS_ITERATOR_CHECK_FUNCTION(0, fn, fn_this);
-	TJS_ITERATOR_PREPARE_DICT_PARAMLIST(paramList);
-	
-	bool ret = true;
-	auto action = [&](tTJSVariant *key, tTJSVariant *val, bool *break_now) {
-		paramList[0] = key;
-		paramList[1] = val;
-		tTJSVariant pred;
-		pred.Clear();
-		(void)fn->FuncCall(0, nullptr, nullptr, &pred, paramList.Count, paramList.Params, fn_this);
-		if (pred.operator bool()) {
-			ret = false;
-			*break_now = true;
-		}
-	};
-	
-	TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var. type*/tTJSNI_DictionaryIterator);
-	tjs_error hr = _this->Each(result, objthis, action);
-	
-	if (hr == TJS_S_OK) {
-		if (result) *result = tTJSVariant(ret);
-		return TJS_S_OK;
-	} else {
-		return hr;
-	}
-}
-TJS_END_NATIVE_METHOD_DECL(/*func. name*/none)
+TJS_ITERATOR_METHOD_DELEGATE(none, DictNone, tTJSNI_DictionaryIterator)
 //----------------------------------------------------------------------
 	TJS_END_NATIVE_MEMBERS
 }
