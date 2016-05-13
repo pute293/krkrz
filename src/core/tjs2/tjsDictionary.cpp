@@ -15,6 +15,7 @@
 #include "tjsArray.h"
 #include "tjsBinarySerializer.h"
 #include "tjsDebug.h"
+#include "tjsIterator.h"
 
 namespace TJS
 {
@@ -64,48 +65,6 @@ public:
 protected:
 	iTJSDispatch2 *array;
 	EnumMode mode;
-};
-//----------------------------------------------------------------------
-// enumerate (key, value) pairs of Dictionary
-// from ScriptsEx
-class DictIterateCaller : public tTJSDispatch
-{
-public:
-	iTJSDispatch2 *func;
-	iTJSDispatch2 *functhis;
-	tTJSVariant **paramList;
-	tjs_int paramCount;
-	
-	DictIterateCaller(iTJSDispatch2 *func,
-					  iTJSDispatch2 *functhis,
-					  tTJSVariant **_paramList,
-					  tjs_int _paramCount)
-		 : func(func), functhis(functhis)
-		   , paramList(_paramList)
-		   , paramCount(_paramCount) {
-		   }
-
-	virtual tjs_error TJS_INTF_METHOD FuncCall( // function invocation
-												tjs_uint32 flag,			// calling flag
-												const tjs_char * membername,// member name ( NULL for a default member )
-												tjs_uint32 *hint,			// hint for the member name (in/out)
-												tTJSVariant *result,		// result
-												tjs_int numparams,			// number of parameters
-												tTJSVariant **param,		// parameters
-												iTJSDispatch2 *objthis		// object as "this"
-												) {
-		if (numparams > 1) {
-			if ((int)*param[1] != TJS_HIDDENMEMBER) {
-				paramList[0] = param[0];
-				paramList[1] = param[2];
-				(void)func->FuncCall(0, NULL, NULL, 0, paramCount, paramList, functhis);
-			}
-		}
-		if (result) {
-			*result = true;
-		}
-		return TJS_S_OK;
-	}
 };
 //----------------------------------------------------------------------
 }
@@ -310,74 +269,60 @@ TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/clear)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func.name*/keys)
 {
-	TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSDictionaryNI);
-	if(!ni->IsValid()) return TJS_E_INVALIDOBJECT;
-	
-	if (result) {
-		iTJSDispatch2 *array = TJSCreateArrayObject();
-		DictMemberGetCaller *caller = new DictMemberGetCaller(array, DictMemberGetCaller::EnumMode::Key);
-		tTJSVariantClosure closure(caller);
-		objthis->EnumMembers(TJS_IGNOREPROP | TJS_ENUM_NO_VALUE, &closure, NULL);
-		caller->Release();
-		*result = tTJSVariant(array, array);
-		array->Release();
-	}
-	
-	return TJS_S_OK;
+	tTJSVariant self(objthis, objthis);
+    auto iter = TJSCreateDictionaryIterator(&self, nullptr);
+    tjs_error hr = iter->FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("keys"), nullptr, result, 0, nullptr, iter);
+    iter->Release();
+    return hr;
 }
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/keys)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func.name*/values)
 {
-	TJS_GET_NATIVE_INSTANCE(/* var. name */ni, /* var. type */tTJSDictionaryNI);
-	if(!ni->IsValid()) return TJS_E_INVALIDOBJECT;
-	
-	if (result) {
-		iTJSDispatch2 *array = TJSCreateArrayObject();
-		DictMemberGetCaller *caller = new DictMemberGetCaller(array, DictMemberGetCaller::EnumMode::Value);
-		tTJSVariantClosure closure(caller);
-		objthis->EnumMembers(TJS_IGNOREPROP, &closure, NULL);
-		caller->Release();
-		*result = tTJSVariant(array, array);
-		array->Release();
-	}
-	
-	return TJS_S_OK;
+	tTJSVariant self(objthis, objthis);
+    auto iter = TJSCreateDictionaryIterator(&self, nullptr);
+    tjs_error hr = iter->FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("values"), nullptr, result, 0, nullptr, iter);
+    iter->Release();
+    return hr;
 }
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/values)
 //----------------------------------------------------------------------
 TJS_BEGIN_NATIVE_METHOD_DECL(/*func.name*/each)
 {
-	if (numparams < 1) return TJS_E_BADPARAMCOUNT;
-	
-	tTJSVariantClosure &clo = param[0]->AsObjectClosureNoAddRef();
-	iTJSDispatch2 *fn = clo.Object;
-	iTJSDispatch2 *fn_this = clo.ObjThis;
-	if (!fn) return TJS_E_INVALIDPARAM;
-	if (!fn_this) {
-	    fn_this = objthis;
-	}
-    
-    tTJSVariant **paramList = new tTJSVariant *[numparams + 1];
-	/* paramList[0]  := key (set by DictIterateCaller)
-	 * paramList[1]  := value (set by DictIterateCaller)
-	 * paramList[..] := *args
-	 */
-	for (tjs_int i = 0; i < numparams - 1; i++)
-		paramList[i + 2] = param[i + 1];
-    
-    DictIterateCaller *caller = new DictIterateCaller(fn, fn_this, paramList, numparams + 1);
-    tTJSVariantClosure closure(caller);
-    
-	objthis->EnumMembers(TJS_IGNOREPROP, &closure, NULL);
-	caller->Release();
-	delete[] paramList;
-    
-	return TJS_S_OK;
+    tTJSVariant self(objthis, objthis);
+    auto iter = TJSCreateDictionaryIterator(&self, nullptr);
+    tjs_error hr = iter->FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("each"), nullptr, result, numparams, param, iter);
+    iter->Release();
+    return hr;
 }
 TJS_END_NATIVE_STATIC_METHOD_DECL(/*func.name*/each)
 //----------------------------------------------------------------------
-
+#define TJS_DICT_ITERATOR_DELEGATE(funcname) \
+TJS_BEGIN_NATIVE_METHOD_DECL(funcname) \
+{ tTJSVariant self(objthis, objthis); \
+  auto iter = TJSCreateDictionaryIterator(&self, nullptr); \
+  tjs_error hr = iter->FuncCall(TJS_MEMBERMUSTEXIST, \
+    TJS_W(#funcname), nullptr, result, numparams, param, iter); \
+  iter->Release(); \
+  return hr; } \
+TJS_END_NATIVE_STATIC_METHOD_DECL(funcname)
+//----------------------------------------------------------------------
+TJS_DICT_ITERATOR_DELEGATE(map)
+TJS_DICT_ITERATOR_DELEGATE(filter)
+TJS_DICT_ITERATOR_DELEGATE(reduce)
+TJS_DICT_ITERATOR_DELEGATE(drop)
+TJS_DICT_ITERATOR_DELEGATE(take)
+TJS_DICT_ITERATOR_DELEGATE(all)
+TJS_DICT_ITERATOR_DELEGATE(any)
+TJS_DICT_ITERATOR_DELEGATE(none)
+TJS_DICT_ITERATOR_DELEGATE(partition)
+TJS_DICT_ITERATOR_DELEGATE(dropWhile)
+TJS_DICT_ITERATOR_DELEGATE(takeWhile)
+TJS_DICT_ITERATOR_DELEGATE(findIndex)
+TJS_DICT_ITERATOR_DELEGATE(pairwise)
+TJS_DICT_ITERATOR_DELEGATE(slice)
+TJS_DICT_ITERATOR_DELEGATE(reject)
+//----------------------------------------------------------------------
 	ClassID_Dictionary = TJS_NCM_CLASSID;
 	TJS_END_NATIVE_MEMBERS
 }

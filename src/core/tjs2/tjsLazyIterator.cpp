@@ -367,6 +367,14 @@ TJS_LAZY_ITERATOR_METHOD_DELEGATE(take, Take, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(all, All, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(any, Any, classname) \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(none, None, classname) \
+/*TJS_LAZY_ITERATOR_METHOD_DELEGATE(partition, Partition, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(dropWhile, DropWhile, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(takeWhile, TakeWhile, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(find, Find, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(findIndex, FindIndex, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(pairwise, Pairwise, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(slice, Slice, classname) \
+TJS_LAZY_ITERATOR_METHOD_DELEGATE(reject, Reject, classname)*/ \
 TJS_LAZY_ITERATOR_METHOD_DELEGATE(toArray, ToArray, classname)
 
 }

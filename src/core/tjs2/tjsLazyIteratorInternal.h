@@ -28,7 +28,7 @@ public:
 	void TJS_INTF_METHOD Destruct();
 
 public:
-	iTJSDispatch2 *GetSource() { return Source; }
+	iTJSDispatch2 * TJS_INTF_METHOD GetSource() { return Source; }
 	void SetSource(iTJSDispatch2 *source) { Source = source; }
 	void SetBackEnd(tTJSLazyIterator *backend) { BackEnd = backend; }
 
@@ -72,7 +72,7 @@ public:
 	void TJS_INTF_METHOD Destruct();
 
 public:
-	iTJSDispatch2 *GetSource() { return Source; }
+	iTJSDispatch2 * TJS_INTF_METHOD GetSource() { return Source; }
 	void SetSource(iTJSDispatch2 *source) { Source = source; }
 	void SetBackEnd(tTJSLazyIterator *backend) { BackEnd = backend; }
 

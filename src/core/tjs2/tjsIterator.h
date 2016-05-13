@@ -39,15 +39,16 @@ public:
 	virtual tjs_error TJS_INTF_METHOD All(tTJSVariant *result, func_t pred);
 	virtual tjs_error TJS_INTF_METHOD Any(tTJSVariant *result, func_t pred);
 	virtual tjs_error TJS_INTF_METHOD None(tTJSVariant *result, func_t pred);
-	
-	//virtual tjs_error TJS_INTF_METHOD DropWhile(tTJSVariant *result, func_t pred);
-	//virtual tjs_error TJS_INTF_METHOD TakeWhile(tTJSVariant *result, func_t pred);
-	//virtual tjs_error TJS_INTF_METHOD Find(tTJSVariant *result, func_t pred);
-	//virtual tjs_error TJS_INTF_METHOD FindIndex(tTJSVariant *result, func_t pred);
-	//virtual tjs_error TJS_INTF_METHOD Pairwise(tTJSVariant *result, tTVInteger count);
-	//virtual tjs_error TJS_INTF_METHOD Slice(tTJSVariant *result, tTVInteger count);
-	//virtual tjs_error TJS_INTF_METHOD Reject(tTJSVariant *result, func_t pred);
-	////virtual tjs_error TJS_INTF_METHOD Zip(tTJSVariant *result, tTVInteger count);
+	virtual tjs_error TJS_INTF_METHOD Partition(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD DropWhile(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD TakeWhile(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD Find(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD FindIndex(tTJSVariant *result, func_t pred);
+	virtual tjs_error TJS_INTF_METHOD Pairwise(tTJSVariant *result, tTVInteger count);
+	virtual tjs_error TJS_INTF_METHOD Slice(tTJSVariant *result, tTVInteger count);
+	virtual tjs_error TJS_INTF_METHOD Reject(tTJSVariant *result, func_t pred);
+	//virtual tjs_error TJS_INTF_METHOD Zip(tTJSVariant *result, tTVInteger count);
+	//virtual tjs_error TJS_INTF_METHOD ToArray(tTJSVariant *result, tTVInteger count);
 };
 
 //---------------------------------------------------------------------------
@@ -202,6 +203,9 @@ public:
 	tjs_error TJS_INTF_METHOD Each(action_t action);
 	tjs_error TJS_INTF_METHOD Map(tTJSVariant *result, func_t map);
 	tjs_error TJS_INTF_METHOD Filter(tTJSVariant *result, func_t pred);
+	
+	tjs_error TJS_INTF_METHOD Keys(tTJSVariant *result);
+	tjs_error TJS_INTF_METHOD Values(tTJSVariant *result);
 
 private:
 	bool UpdateKeys(void);

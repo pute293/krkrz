@@ -5,12 +5,21 @@
   - `[ x * 2 for x in array, x < 10 ]`
   - python と haskell を足して割った感じで、`[ expr for x in expr, y in expr, y < 10 ]` みたいに書く。述語は `,` の代わりに `if`でも可
 - 組み込みクラスへのネイティブメソッドの追加（特に高階関数）
-  - `Array.each`, `Array.map`, `Array.filter`, `Array.reduce`
-  - `Dictionary.each`, `Dictionary.keys`, `Dictionary.values`
+  - `Array`
+    - `each`, `map`, `filter`, `reduce`, `drop`, `take`, `all`, `any`,
+      `none`, `partition`, `dropWhile`, `takeWhile`, `findIndex`, `pairwise`,
+      `slice`, `reject`
+  - `Dictionary`
+    - `each`, `keys`, `values`, `map`, `filter`, `reduce`, `drop`, `take`,
+      `all`, `any`, `none`, `partition`, `dropWhile`, `takeWhile`, `findIndex`,
+      `pairwise`, `slice`, `reject`
 - 無名関数式の省略表現（いわゆる「ラムダ式」）
   - `function (x, y) { return x * y; }` を `-> (x, y) { return x * y; }` と書ける
   - 本体が式ひとつなら `return` も省略して `-> (x, y) [ x * y ]` と書ける
   - 引数が無いか 1 つなら丸括弧も省略して `-> x [ x * 2 ]` みたいに書ける
+- `Iterator` と `Iterator.Lazy`
+  - ユーザ定義のオブジェクトを `for-in` で回せる
+  - 継承して `current` と `moveNext` を適切にオーバーライドすれば上記の便利メソッドも自動で使えるようになる
 - Dictionary.METHOD incontextof OBJ の省略表現
   - `(Dictionary.assign incontextof dict0)(dict1)` を `dict0->assign(dict1)` と書ける
   - `(__class_of__(OBJ)).METHOD incontextof OBJ` にした方がいいかも？
