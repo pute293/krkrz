@@ -35,7 +35,12 @@ class Test {
       return @'%[${items.join(", ")}]';
     }
     if (typeof obj === 'String') return @'"${obj}"';
-    return (string)obj;
+    
+    try {
+      return obj.toString();
+    } catch {
+      return (string)obj;
+    }
   }
   
   function equal_struct(obj1, obj2) {
@@ -118,7 +123,7 @@ class Test {
   
   function assert_throw(fn, str='') {
     try { fn(); } catch { return true; }
-    throw new Exception(str);
+    throw new Exception(str + ' (exception expected, but not happen)');
   }
   
   function assert_array_equal(v, expected, str='') {

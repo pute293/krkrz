@@ -1836,7 +1836,7 @@ tTJSCustomObject::GetSuperClass(tjs_uint32 flag, iTJSDispatch2 **result,
 }
 */
 //---------------------------------------------------------------------------
-tjs_error TJSDefaultIsInstanceOf(tjs_uint32 flag, tTJSVariant &targ, const tjs_char *name,
+tjs_error TJSDefaultIsInstanceOf(tjs_uint32 flag, const tTJSVariant &targ, const tjs_char *name,
 	iTJSDispatch2 *objthis)
 {
 	tTJSVariantType vt;

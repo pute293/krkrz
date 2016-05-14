@@ -103,6 +103,7 @@ int __yyerror(char * msg, void *pm);
 	T_PERCENT				"%"
 	T_SLASH					"/"
 	T_BACKSLASH				"\\"
+	T_RATIONAL				"\\\\"
 	T_ASTERISK				"*"
 	T_EXCRAMATION			"!"
 	T_TILDE					"~"
@@ -852,6 +853,7 @@ mul_div_expr
 	| mul_div_expr "%" unary_expr				{ $$ = cc->MakeNP2(T_PERCENT, $1, $3); }
 	| mul_div_expr "/" unary_expr				{ $$ = cc->MakeNP2(T_SLASH, $1, $3); }
 	| mul_div_expr "\\" unary_expr				{ $$ = cc->MakeNP2(T_BACKSLASH, $1, $3); }
+	| mul_div_expr "\\\\" unary_expr			{ $$ = cc->MakeNP2(T_RATIONAL, $1, $3); }
 	| mul_div_expr_and_asterisk unary_expr		{ $$ = cc->MakeNP2(T_ASTERISK, $1, $2); }
 ;
 

@@ -985,7 +985,6 @@ static void TJSInitReservedWordsHashTable()
 	TJS_REG_RES_WORD("enum", T_ENUM);
 	TJS_REG_RES_WORD("else", T_ELSE);
 	TJS_REG_RES_WORD("function", T_FUNCTION);
-    TJS_REG_RES_WORD("->", T_ARROW);
 	TJS_REG_RES_WORD("finally", T_FINALLY);
 	TJS_REG_RES_WORD("false", T_FALSE);
 	TJS_REG_RES_WORD("foreach", T_FOREACH);
@@ -1429,6 +1428,7 @@ re_match:
 
 	case TJS_W('\\'):
 		TJS_MATCH_S("\\=", T_BACKSLASHEQUAL);
+		TJS_MATCH_S("\\\\", T_RATIONAL);
 		TJS_1CHAR(T_BACKSLASH);
 
 	case TJS_W('%'):

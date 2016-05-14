@@ -1,0 +1,138 @@
+Scripts.dump();
+(new TestRational()).run();
+
+class TestRational extends Test {
+  
+  var name = 'RATIONAL';
+  var tests = [
+    'test_ctor',
+    'test_calc',
+    'test_operator'
+  ];
+  
+  function test_ctor {
+    assert(new Rational(1), '1');
+    assert(new Rational(1.0), '2');
+    assert(new Rational(1,1), '3');
+    assert(new Rational(1.0,1), '4');
+    assert(new Rational(1,1.0), '5');
+    assert(new Rational(1.0,1.0), '6');
+    assert(1 \\ 1, '7');
+    assert_throw(->[new Rational(Infinity)], '8');
+    assert_throw(->[new Rational(1, 0)], '9');
+    assert_throw(->[new Rational(1, 0.0)], '10');
+    
+    var r = new Rational(2.3);
+    assert_equal(r.numerator, 2589569785738035, '11');
+    assert_equal(r.denominator, 1125899906842624, '12');
+    
+    var r = 2.3 \\ 1;
+    assert_equal(r.numerator, 2589569785738035, '13');
+    assert_equal(r.denominator, 1125899906842624, '14');
+  }
+  
+  function test_calc {
+    // add int
+    var r1 = 1 \\ 1;
+    assert_equal(r1.add(1), 2 \\ 1, 'add1');
+    r1 = 1 \\ 2;
+    assert_equal(r1.add(1), 3 \\ 2, 'add2');
+    
+    // add rational
+    r1 = 1 \\ 3;
+    assert_equal(r1.add(1 \\ 3), 2 \\ 3, 'add3');
+    // with reduction
+    r1 = 1 \\ 6;
+    assert_equal(r1.add(1 \\ 6), 1 \\ 3, 'add4');
+    r1 = 1 \\ 2;
+    assert_equal(r1.add(1 \\ 6), 2 \\ 3, 'add5');
+    
+    // sub
+    r1 = 1 \\ 2;
+    assert_equal(r1.sub(1), -1 \\ 2, 'sub1');
+    r1 = 1 \\ 2;
+    assert_equal(r1.sub(1 \\ 2), 0 \\ 1, 'sub2');
+    r1 = 5 \\ 6;
+    assert_equal(r1.sub(1 \\ 2), 1 \\ 3, 'sub3');
+    
+    // mul
+    r1 = 5 \\ 6;
+    assert_equal(r1.mul(2 \\ 3), 5 \\ 9, 'mul1');
+    
+    // div
+    r1 = 5 \\ 6;
+    assert_equal(r1.div(5 \\ 3), 1 \\ 2, 'div1');
+    
+    // idiv
+    r1 = 13 \\ 6;
+    assert_equal(r1.idiv(1), 2, 'idiv1');
+    assert_equal(r1.idiv(3 \\ 4), 2, 'idiv2');
+    
+    // pow
+    r1 = 5 \\ 6;
+    assert_equal(r1.pow(2), 25 \\ 36, 'pow1');
+    assert_equal(r1.pow(2 \\ 1), 25 \\ 36, 'pow2');
+    assert_equal(r1.pow(2.0), 25.0 / 36.0, 'pow3');
+    assert_equal((1 \\ 4).pow(1 \\ 2), 1 \\ 2, 'pow4');
+    
+    // cast
+    r1 = -1 \\ 2;
+    assert_equal((int)r1, 0, 'cast1');
+    assert_equal((real)r1, -0.5, 'cast2');
+    assert_equal((string)r1, '(-1/2)', 'cast3');
+  }
+  
+  function test_operator {
+    var r1 = 1 \\ 1;
+    assert_equal(r1 + 1, 2 \\ 1, 'add1');
+    assert_equal(r1, 1 \\ 1, 'immutability');
+    r1 = 1 \\ 2;
+    assert_equal(r1 + 1, 3 \\ 2, 'add2');
+    
+    // add rational
+    r1 = 1 \\ 3;
+    assert_equal(r1 + 1 \\ 3, 2 \\ 3, 'add3');
+    // with reduction
+    r1 = 1 \\ 6;
+    assert_equal(r1 + 1 \\ 6, 1 \\ 3, 'add4');
+    r1 = 1 \\ 2;
+    assert_equal(r1 + 1 \\ 6, 2 \\ 3, 'add5');
+    
+    // sub
+    r1 = 1 \\ 2;
+    assert_equal(r1 - 1, -1 \\ 2, 'sub1');
+    r1 = 1 \\ 2;
+    assert_equal(r1 - 1 \\ 2, 0 \\ 1, 'sub2');
+    r1 = 5 \\ 6;
+    assert_equal(r1 - 1 \\ 2, 1 \\ 3, 'sub3');
+    
+    // mul
+    r1 = 5 \\ 6;
+    assert_equal(r1 * 2 \\ 3, 5 \\ 9, 'mul1');
+    
+    // div
+    r1 = 5 \\ 6;
+    assert_equal(r1 / (5 \\ 3), 1 \\ 2, 'div1');
+    
+    // idiv
+    r1 = 13 \\ 6;
+    assert_equal(r1 \ 1, 2, 'idiv1');
+    assert_equal(r1 \ (3 \\ 4), 2, 'idiv2');
+    
+    // unary ops
+    r1 = 1 \\ 2;
+    assert_equal(+r1, 1 \\ 2, '@+');
+    assert_equal(-r1, -1 \\ 2, '@-');
+    assert_equal(r1, 1 \\ 2, 'immutability2');
+    
+    // compare
+    assert(1 \\ 2 == 0.5, 'cmp1');
+    assert(1 \\ 2 != 0.6, 'cmp2');
+    assert(1 \\ 2 !== 0.5, 'cmp3');
+    assert(1 \\ 2 === 2 \\ 4, 'cmp4');
+    assert(1 \\ 2 < 1, 'cmp5');
+    assert(1 < 3 \\ 2, 'cmp6');
+    assert(1 \\ 2 <= 0.5, 'cmp7');
+    assert(0.5 <= 1 \\ 2, 'cmp8');
+  }
+}

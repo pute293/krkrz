@@ -32,6 +32,7 @@
 #include "tjsRegExp.h"
 #include "tjsIterator.h"
 #include "tjsLazyIterator.h"
+#include "tjsRational.h"
 
 namespace TJS
 {
@@ -195,6 +196,12 @@ tTJS::tTJS()
 		dsp->Release();
 		Global->PropSet(TJS_MEMBERENSURE, TJS_W("RegExp"), NULL, &val, Global);
 #endif
+
+		// Rational
+		dsp = new tTJSNC_Rational();
+		val = tTJSVariant(dsp, NULL);
+		dsp->Release();
+		Global->PropSet(TJS_MEMBERENSURE, TJS_W("Rational"), NULL, &val, Global);
 
 		// Iterator
 		{

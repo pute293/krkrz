@@ -762,7 +762,14 @@ public:
 		switch(vt)
 		{
 		case tvtVoid:    return NULL;
-		case tvtObject:  return TJSObjectToString(*(tTJSVariantClosure*)&Object);
+		case tvtObject:
+			if (Object.Object) {
+				tTJSVariant v;
+				tjs_error hr = Object.Object->FuncCall(TJS_MEMBERMUSTEXIST,
+						TJS_W("toString"), nullptr, &v, 0, nullptr, nullptr);
+				if (TJS_SUCCEEDED(hr)) return v.AsString();
+			}
+			return TJSObjectToString(*(tTJSVariantClosure*)&Object);
 		case tvtString:  { if(String) { String->AddRef(); } return String; }
 		case tvtInteger: return TJSIntegerToString(Integer);
 		case tvtReal:    return TJSRealToString(Real);
@@ -862,7 +869,16 @@ public:
 		switch(vt)
 		{
 		case tvtVoid:    return 0;
-		case tvtObject:  TJSThrowVariantConvertError(*this, tvtInteger);
+		case tvtObject:
+			if (Object.Object) {
+				tTJSVariant v;
+				tjs_error hr = Object.Object->FuncCall(TJS_MEMBERMUSTEXIST,
+						TJS_W("toInteger"), nullptr, &v, 0, nullptr, nullptr);
+				if (TJS_FAILED(hr)) TJSThrowVariantConvertError(*this, tvtInteger);
+				return v.AsInteger();
+			} else {
+				TJSThrowVariantConvertError(*this, tvtInteger);
+			}
 		case tvtString:  return String->ToInteger();
 		case tvtInteger: return Integer;
 		case tvtReal:    TJSSetFPUE(); return (tTVInteger)Real;
@@ -920,7 +936,16 @@ public:
 		switch(vt)
 		{
 		case tvtVoid:    return 0;
-		case tvtObject:  TJSThrowVariantConvertError(*this, tvtReal);
+		case tvtObject:
+			if (Object.Object) {
+				tTJSVariant v;
+				tjs_error hr = Object.Object->FuncCall(TJS_MEMBERMUSTEXIST,
+						TJS_W("toReal"), nullptr, &v, 0, nullptr, nullptr);
+				if (TJS_FAILED(hr)) TJSThrowVariantConvertError(*this, tvtInteger);
+				return v.AsReal();
+			} else {
+				TJSThrowVariantConvertError(*this, tvtReal);
+			}
 		case tvtString:  return String->ToReal();
 		case tvtInteger: return (tTVReal)Integer;
 		case tvtReal:    return Real;
@@ -963,6 +988,57 @@ public:
 	TJS_METHOD_DEF(tTJSVariant &, operator =, (tjs_real ref)); // from double
 
 	//---- operators --------------------------------------------------------
+
+	/** TJS2_op  method_name       VM_code                     override
+	 * -----------------------------------------------------------------
+	 *  ||       operator bool     tt lhs; jf; tt rhs; setf    
+	 *  ||=      logicalorequal    lorpd                       
+	 *  &&       operator bool     tt lhs; jnf; tt rhs; setf   
+	 *  &&=      logicalandequal   landpd                      
+	 *  |        operator |=       bor                         
+	 *  |=       operator |=       borpd                       
+	 *  ^        operator ^=       bxor                        
+	 *  ^=       operator ^=       bxorpd                      
+	 *  &        operator &=       band                        
+	 *  &=       operator &=       bandpd                      
+	 *  !=       NormalCompare     ceq; setnf                  * __eq__
+	 *  ==       NormalCompare     ceq; setf                   * __eq__
+	 *  !==      DiscernCompare    cdeq; setnf;                * __deq__
+	 *  ===      DiscernCompare    cdeq; setf                  * __deq__
+	 *  <        GreaterThan       clt; setf                   
+	 *  >        LittlerThan       cgt; setf                   
+	 *  <=       LittlerThan       cgt; setnf                  
+	 *  >=       GreaterThan       clt; setnf                  
+	 *  >>       operator >>=      sar                         
+	 *  >>=      operator >>=      sarpd                       
+	 *  <<       operator <<=      sal                         
+	 *  <<=      operator <<=      salpd                       
+	 *  >>>      rbitshiftequal    sr                          
+	 *  >>>=     rbitshiftequal    srpd                        
+	 *  a+b      operator +=       add                         * __add__
+	 *  +=       operator +=       addpd                       * __add__
+	 *  a-b      operator -=       sub                         * __sub__
+	 *  -=       operator -=       subpd                       * __sub__
+	 *  %        operator %=       mod                         * __mod__
+	 *  %=       operator %=       modpd                       * __mod__
+	 *  /        operator /=       div                         * __div__
+	 *  /=       operator /=       divpd                       * __div__
+	 *  \        idivequal         idiv                        * __idiv__
+	 *  \=       idivequal         idivpd                      * __idiv__
+	 *  *        operator *=       mul                         * __mul__
+	 *  *=       operator *=       mulpd                       * __mul__
+	 *  !a       logicalnot        lnot                        
+	 *  ~a       bitnot            bnot                        
+	 *  --a      decrement         decpd                       
+	 *  ++a      increment         incpd                       
+	 *  +a       tonumber          num                         
+	 *  -a       changesign        chs                         
+	 *  a++      increment         incpd                       
+	 *  a--      decrement         decpd                       
+	 *  int                                                    * toInteger
+	 *  real                                                   * toReal
+	 *  string                                                 * toString
+	 */
 
 	TJS_CONST_METHOD_DEF(tTJSVariant, operator ||, (const tTJSVariant & rhs))
 	{

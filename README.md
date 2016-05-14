@@ -24,6 +24,22 @@
 - Dictionary.METHOD incontextof OBJ の省略表現
   - `(Dictionary.assign incontextof dict0)(dict1)` を `dict0->assign(dict1)` と書ける
   - `(__class_of__(OBJ)).METHOD incontextof OBJ` にした方がいいかも？
+- `Rational` クラス
+  - 有理素を扱う
+  - `new Rational(num, den)` もしくは `num \\ den` で生成する
+  - 普通に `+` や `*` 演算子を使うことができる
+- 演算子オーバーロード
+  - pytyhon 風に、以下のメソッドをもつクラスはそれぞれの演算子が使える
+    - `+`   : `__add__`
+    - `-`   : `__sub__`
+    - `*`   : `__mul__`
+    - `/`   : `__div__`
+    - `\`   : `__idiv__`
+    - `%`   : `__mod__`
+    - `==`  : `__eq__`
+    - `===` : `__deq__`
+    - `+`   : `__num__`
+    - `-`   : `__neg__`
 - その他こまごま
   - while, do-while のスコープが変なのを修正（krkrz/krkrz の issue #226 を参照）
   - loop 文

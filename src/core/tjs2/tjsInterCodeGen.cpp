@@ -1376,6 +1376,32 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 		return _GenNodeCode(frame, (*node)[0], restype, reqresaddr, param2);
 	  }
 
+	case T_RATIONAL:
+	  {
+		tjs_int ratldp = PutData(tTJSVariant(TJS_W("Rational")));
+		tjs_int numeric, denom;
+		numeric = _GenNodeCode(frame, (*node)[0], TJS_RT_NEEDED, reqresaddr, param);
+		denom = _GenNodeCode(frame, (*node)[1], TJS_RT_NEEDED, reqresaddr, param);
+		
+		// global %frame0
+		PutCode(VM_GLOBAL, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		// gpd %frame1, %frame0 . #ratldp // #ratldp = Rational
+		PutCode(VM_GPD, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(ratldp), node_pos);
+		//	new %frame0, %frame1()
+		PutCode(VM_NEW, node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1), node_pos);
+		PutCode(2);
+		PutCode(TJS_TO_VM_REG_ADDR(numeric), node_pos);
+		PutCode(TJS_TO_VM_REG_ADDR(denom), node_pos);
+		
+		return (restype & TJS_RT_NEEDED)? frame++ : 0;
+	  }
+
 	case T_QUESTION: // '?' ':' operator
 	  {
 		// three-term operator ( ?  :  )

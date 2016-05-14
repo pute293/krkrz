@@ -416,7 +416,15 @@ void tTJSVariant::ToString()
 
 	case tvtObject:
 	  {
-		tTJSVariantString * string = TJSObjectToString(*(tTJSVariantClosure*)&Object);
+		tTJSVariantString * string = nullptr;
+		
+		if (Object.Object) {
+			tTJSVariant v;
+			tjs_error hr = Object.Object->FuncCall(TJS_MEMBERMUSTEXIST,
+					TJS_W("toString"), nullptr, &v, 0, nullptr, nullptr);
+			if (TJS_SUCCEEDED(hr)) string = v.AsString();
+		}
+		if (!string) string = TJSObjectToString(*(tTJSVariantClosure*)&Object);
 		ReleaseObject();
 		String = string;
 		vt=tvtString;
@@ -692,8 +700,14 @@ bool tTJSVariant::NormalCompare(const tTJSVariant &val2) const
 
 			if(vt == tvtObject)
 			{
-				return Object.Object == val2.Object.Object/* &&
+				bool b = Object.Object == val2.Object.Object/* &&
 					Object.ObjThis == val2.Object.ObjThis*/;
+				if (b || !Object.Object) return b;
+				tTJSVariant v;
+				tTJSVariant *pv = (tTJSVariant *)&val2;
+				tjs_error hr = Object.Object->FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__eq__"), nullptr, &v, 1, &pv, nullptr);
+				if (TJS_FAILED(hr)) return false;
+				return v.operator bool();
 			}
 
 			if(vt == tvtVoid) return true;
@@ -776,8 +790,16 @@ bool tTJSVariant::DiscernCompare(const tTJSVariant &val2) const
 		switch(vt)
 		{
 		case tvtObject:
-			return Object.Object == val2.Object.Object &&
+			{
+				bool b = Object.Object == val2.Object.Object &&
 				Object.ObjThis == val2.Object.ObjThis;
+				if (b || !Object.Object) return b;
+				tTJSVariant v;
+				tTJSVariant *pv = (tTJSVariant *)&val2;
+				tjs_error hr = Object.Object->FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__deq__"), nullptr, &v, 1, &pv, nullptr);
+				if (TJS_FAILED(hr)) return false;
+				return v.operator bool();
+			}
 		case tvtString:
 			return NormalCompare(val2);
 		case tvtOctet:
@@ -978,6 +1000,26 @@ void tTJSVariant::operator <<= (const tTJSVariant &rhs)
 //---------------------------------------------------------------------------
 void tTJSVariant::operator %= (const tTJSVariant &rhs)
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = (tTJSVariant*)&rhs;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__mod__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	} else if (rhs.vt == tvtObject) {
+		tTJSVariantClosure &clo = rhs.AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = this;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__mod__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+	
 	tTVInteger r=rhs.AsInteger();
 	if(r == 0) TJSThrowDivideByZero();
 	tTVInteger l=AsInteger();
@@ -988,6 +1030,26 @@ void tTJSVariant::operator %= (const tTJSVariant &rhs)
 //---------------------------------------------------------------------------
 void tTJSVariant::operator /= (const tTJSVariant &rhs)
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = (tTJSVariant*)&rhs;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__div__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	} else if (rhs.vt == tvtObject) {
+		tTJSVariantClosure &clo = rhs.AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = this;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__div__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+	
 	TJSSetFPUE();
 	tTVReal l=AsReal();
 	tTVReal r=rhs.AsReal();
@@ -998,6 +1060,26 @@ void tTJSVariant::operator /= (const tTJSVariant &rhs)
 //---------------------------------------------------------------------------
 void tTJSVariant::idivequal (const tTJSVariant &rhs)
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = (tTJSVariant*)&rhs;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__idiv__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	} else if (rhs.vt == tvtObject) {
+		tTJSVariantClosure &clo = rhs.AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = this;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__idiv__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+	
 	tTVInteger r=rhs.AsInteger();
 	tTVInteger l=AsInteger();
 	if(r == 0) TJSThrowDivideByZero();
@@ -1008,6 +1090,26 @@ void tTJSVariant::idivequal (const tTJSVariant &rhs)
 //---------------------------------------------------------------------------
 void tTJSVariant::InternalMul(const tTJSVariant &rhs)
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = (tTJSVariant*)&rhs;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__mul__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	} else if (rhs.vt == tvtObject) {
+		tTJSVariantClosure &clo = rhs.AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = this;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__mul__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+	
 	tTJSVariant l;
 	AsNumber(l);
 	ReleaseContent();
@@ -1042,6 +1144,16 @@ void tTJSVariant::bitnot()
 //---------------------------------------------------------------------------
 void tTJSVariant::tonumber()
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__num__"), nullptr, &v, 0, nullptr, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+
 	if(vt==tvtInteger || vt==tvtReal)
 		return; // nothing to do
 
@@ -1058,6 +1170,16 @@ void tTJSVariant::tonumber()
 //---------------------------------------------------------------------------
 void tTJSVariant::InternalChangeSign()
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__neg__"), nullptr, &v, 0, nullptr, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+
 	tTJSVariant val;
 	AsNumber(val);
 	ReleaseContent();
@@ -1076,6 +1198,26 @@ void tTJSVariant::InternalChangeSign()
 //---------------------------------------------------------------------------
 void tTJSVariant::InternalSub(const tTJSVariant &rhs)
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = (tTJSVariant*)&rhs;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__sub__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	} else if (rhs.vt == tvtObject) {
+		tTJSVariantClosure &clo = rhs.AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = this;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__sub__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+	
 	tTJSVariant l;
 	AsNumber(l);
 	ReleaseContent();
@@ -1094,6 +1236,26 @@ void tTJSVariant::InternalSub(const tTJSVariant &rhs)
 //---------------------------------------------------------------------------
 void tTJSVariant::operator +=(const tTJSVariant &rhs)
 {
+	if (vt == tvtObject) {
+		tTJSVariantClosure &clo = AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = (tTJSVariant*)&rhs;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__add__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	} else if (rhs.vt == tvtObject) {
+		tTJSVariantClosure &clo = rhs.AsObjectClosureNoAddRef();
+		tTJSVariant v;
+		tTJSVariant *pv = this;
+		tjs_error hr = clo.FuncCall(TJS_MEMBERMUSTEXIST, TJS_W("__add__"), nullptr, &v, 1, &pv, nullptr);
+		if (TJS_SUCCEEDED(hr)) {
+			*this = v;
+			return;
+		}
+	}
+	
 	if(vt==tvtString || rhs.vt==tvtString)
 	{
 		if(vt == tvtString && rhs.vt == tvtString)

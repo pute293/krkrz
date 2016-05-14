@@ -44,7 +44,7 @@ extern tjs_error
 		iTJSDispatch2 *objthis);
 
 extern tjs_error
-	TJSDefaultIsInstanceOf(tjs_uint32 flag, tTJSVariant &targ, const tjs_char *name,
+	TJSDefaultIsInstanceOf(tjs_uint32 flag, const tTJSVariant &targ, const tjs_char *name,
 		iTJSDispatch2 *objthis);
 
 extern tjs_error
