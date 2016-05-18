@@ -1,4 +1,4 @@
-Scripts.dump();
+//Scripts.dump();
 (new TestRational()).run();
 
 class TestRational extends Test {

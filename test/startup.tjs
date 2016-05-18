@@ -1,3 +1,13 @@
+//Scripts.dump();
+//var [a, [b, c, [d]]] = [9, [10, 11, [12]]];
+//var [[[a], b, c], d] = [[[13], 14, 15], 16];
+//var [a, [b, c], d] = [17, [18, 19], 20];
+//var x, y, z, w;
+//[x, [y, z, [w]]] = [25, [26, 27, [28]]];
+//
+//function f { }
+//[ f() ] = [1];
+
 Scripts.execStorage("TestClass.tjs");
 Test.init();
 
@@ -15,6 +25,7 @@ try {
   Scripts.execStorage("foreach.tjs");
   Scripts.execStorage("comprehension.tjs");
   Scripts.execStorage("rational.tjs");
+  Scripts.execStorage("unpack.tjs");
 } catch (e) {
   if (e) {
     err = e.message;

@@ -225,6 +225,7 @@ int __yyerror(char * msg, void *pm);
 
 %type <dp>
 	for_first_clause forin_decl variable_def variable_def_inner variable_id_list
+	variable_id_unpack variable_id_unpack_list
 
 %type <dn>
 	variable_id
@@ -500,6 +501,9 @@ forin_decl
 	| T_SYMBOL variable_type				{ $$ = cc->CreateVarDeclList(); 
 											  $$->Push(cc->GetVarDeclNode(lx->GetString($1)));
 											  $$->SetNotLocal(); }
+	| "var" variable_id_unpack				{ $$ = $2; }
+	| "const" variable_id_unpack			{ $$ = $2; }
+	| inline_array							{ $$ = tTJSVarDeclList::FromInlineArray($1); }
 ;
 
 /* variable definition */
@@ -518,18 +522,29 @@ variable_def_inner
 variable_id_list
 	: variable_id							{ $$ = cc->CreateVarDeclList(); $$->Push($1); }
 	| variable_id_list "," variable_id		{ $$ = $1; $$->Push($3); }
+	| variable_id_unpack "=" expr_no_comma	{ $$ = $1; $$->SetUnpackExpr($3); }
 ;
 
 /* a variable id and an optional initializer expression */
 variable_id
-/*	: T_SYMBOL variable_type				{ cc->AddLocalVariable(
-												lx->GetString($1)); }
-	| T_SYMBOL variable_type "=" expr_no_comma	{ cc->InitLocalVariable(
-											  lx->GetString($1), $4); }
-*/
 	: T_SYMBOL variable_type				{ $$ = cc->GetVarDeclNode(lx->GetString($1)); }
 	| T_SYMBOL variable_type "="
 	  expr_no_comma							{ $$ = cc->GetVarDeclNode(lx->GetString($1), $4); }
+;
+
+variable_id_unpack
+	: "[" variable_id_unpack_list "]"		{ $$ = $2->Pack(); }
+;
+
+variable_id_unpack_list
+	: T_SYMBOL variable_type				{ $$ = cc->CreateVarDeclList();
+											  $$->Push(lx->GetString($1)); }
+	| variable_id_unpack_list "," T_SYMBOL variable_type
+											{ $$ = $1;
+											  $$->Push(lx->GetString($3)); }
+	| variable_id_unpack_list "," variable_id_unpack
+											{ $$ = $1->Join($3); }
+	| variable_id_unpack					{ $$ = $1; }
 ;
 
 /* a variable type. It is not currently effect. Ignore types. */
@@ -541,7 +556,7 @@ variable_type
 	| ":" T_REAL
 	| ":" T_STRING
 	| ":" T_OCTET
-
+;
 
 /* a function definition */
 func_def

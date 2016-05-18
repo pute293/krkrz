@@ -563,6 +563,9 @@
     <ClInclude Include="..\tjs2\tjsRational.h">
       <Filter>tjs2</Filter>
     </ClInclude>
+    <ClInclude Include="..\tjs2\tjsConsCell.h">
+      <Filter>tjs2</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\tjs2\tjs.cpp">
@@ -1004,6 +1007,9 @@
       <Filter>tjs2</Filter>
     </ClCompile>
     <ClCompile Include="..\tjs2\tjsRational.cpp">
+      <Filter>tjs2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tjs2\tjsConsCell.cpp">
       <Filter>tjs2</Filter>
     </ClCompile>
   </ItemGroup>

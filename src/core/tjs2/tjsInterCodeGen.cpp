@@ -174,13 +174,64 @@ void tTJSExprNode::AddDictionaryElement(const tTJSString & name, const tTJSVaria
 //---------------------------------------------------------------------------
 void tTJSVarDeclList::Push(const tjs_char *varname, tTJSExprNode *node)
 {
-	Nodes.emplace_back(varname, node);
+	Nodes->push_back(new Node(varname, node));
 }
 //---------------------------------------------------------------------------
 void tTJSVarDeclList::Push(tTJSVarDeclList::Node *node)
 {
-	Nodes.push_back(std::move(*node));
-	delete node;
+	Nodes->push_back(node);
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList *tTJSVarDeclList::Join(tTJSVarDeclList *list)
+{
+	Nodes->push_back(list->Nodes);
+	list->Nodes = nullptr;
+	
+	delete list;
+	return this;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList *tTJSVarDeclList::Pack()
+{
+	auto new_nodes = new DeclList();
+	new_nodes->push_back(Nodes);
+	Nodes = new_nodes;
+	return this;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList::DeclList *
+tTJSVarDeclList::Unpack()
+{
+	return (DeclList*)Nodes->Car;
+}
+//---------------------------------------------------------------------------
+tTJSVarDeclList *
+tTJSVarDeclList::FromInlineArray(tTJSExprNode *array, tTJSVarDeclList *list)
+{
+	if (!list) list = new tTJSVarDeclList();
+	
+	for (tjs_int idx = 0, e = array->GetSize(); idx < e; ++idx) {
+		auto _ele = (*array)[idx];
+		// _ele.GetOpecode() must return `T_ARRAYARG`
+		if (_ele->GetSize() != 1) return nullptr;
+		auto ele = (*_ele)[0];
+		switch (ele->GetOpecode()) {
+		case T_SYMBOL:
+			list->Push(ele->GetValue().GetString());
+			break;
+		case T_INLINEARRAY:
+		  {
+			auto lst = FromInlineArray(ele);
+			if (!lst) return nullptr;
+			list->Join(lst->Pack());
+		  }
+			break;
+		default:
+			delete list;
+			return nullptr;
+		}
+	}
+	return list;
 }
 //---------------------------------------------------------------------------
 tTJSVarDeclList::Node::Node(const tjs_char *varname, tTJSExprNode *val)
@@ -223,6 +274,37 @@ tTJSVarDeclList::Node::operator=(Node &&node) TJS_NOEXCEPT
 	node.Name = nullptr;
 	node.Value = nullptr;
 	return *this;
+}
+//---------------------------------------------------------------------------
+void tTJSVarDeclList::Node::Commit(tTJSInterCodeContext *cc, tTJSLocalNamespace &ns)
+	const TJS_NOEXCEPT
+{
+	switch (Type) {
+	case NodeType::Var: /* fall through */
+	case NodeType::Const:
+		if (Value) {
+			cc->InitLocalVariable(Name, Value);
+		} else {
+			cc->AddLocalVariable(Name, ResAddr);
+		}
+		break;
+	case NodeType::NotLocal:
+		if (Value) {
+			tTJSExprNode *name = cc->MakeNP0(T_SYMBOL);
+			name->SetValue(tTJSVariant(Name));
+			cc->CreateExprCode(cc->MakeNP2(T_EQUAL, name, Value));
+		} else {
+			tjs_int n = ns.Find(Name);
+			if (n < 0) {
+				// on `this` context
+				cc->AssignThisVariable(Name, ResAddr);
+			} else {
+				// on outer scope
+				cc->AssignLocalVariable(Name, ResAddr);
+			}
+		}
+		break;
+	}
 }
 //---------------------------------------------------------------------------
 
@@ -2447,6 +2529,23 @@ tjs_int tTJSInterCodeContext::GenNodeCode(tjs_int & frame, tTJSExprNode *node,
 
 		tjs_int nodesize = node->GetSize();
 		
+		if (param.SubType == stEqual) {
+			// unpack assign
+			auto list = tTJSVarDeclList::FromInlineArray(node);
+			if (!list) {
+				_yyerror(TJSCannotModifyLHS, Block);
+				return 0;
+			}
+			FrameBase += 1;
+			list->SetNotLocal();
+			list->Pack();
+			DeclareVariablesInternal(list->Unpack(), param.SubAddress);
+			FrameBase -= 1;
+			
+			delete list;
+			return (restype & TJS_RT_NEEDED) ? param.SubAddress : 0;
+		} 
+		
 		if (nodesize == 1 && (*node)[0]->GetOpecode() == T_ARRAYCOMP)
 		{
 			// comprehension array
@@ -2986,44 +3085,54 @@ void tTJSInterCodeContext::AddLocalVariable(const tjs_char *name, tjs_int init)
 		// create on local
 //		tjs_int ff = Namespace.Find(name);
 		Namespace.Add(name);
-		if(init != 0)
-		{
-			// initial value is given
-			tjs_int n = Namespace.Find(name);
-#ifdef ENABLE_DEBUGGER
-			int regoffset = TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1);
-			// class name, func name, file name, code offset, var name, reg offset
-			TJSDebuggerAddLocalVariable( GetClassName().c_str(), GetName(), Block->GetName(), FunctionRegisterCodePoint, name, regoffset );
-#endif // ENABLE_DEBUGGER
-			PutCode(VM_CP, LEX_POS);
-			PutCode(TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1), LEX_POS);
-			PutCode(TJS_TO_VM_REG_ADDR(init), LEX_POS);
-		}
-		else/* if(ff==-1) */
-		{
-			// first initialization
-			tjs_int n = Namespace.Find(name);
-#ifdef ENABLE_DEBUGGER
-			int regoffset = TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1);
-			// class name, func name, file name, code offset, var name, reg offset
-			TJSDebuggerAddLocalVariable( GetClassName().c_str(), GetName(), Block->GetName(), FunctionRegisterCodePoint, name, regoffset );
-#endif // ENABLE_DEBUGGER
-			PutCode(VM_CL, LEX_POS);
-			PutCode(TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1), LEX_POS);
-		}
+		AssignLocalVariable(name, init);
 	}
 	else
 	{
-		// create member on this
-		tjs_int	dp = PutData(tTJSVariant(name));
+		AssignThisVariable(name, init);
+	}
+}
+//---------------------------------------------------------------------------
+void tTJSInterCodeContext::AssignLocalVariable(const tjs_char *name, tjs_int init)
+{
+	if(init != 0)
+	{
+		// initial value is given
+		tjs_int n = Namespace.Find(name);
 #ifdef ENABLE_DEBUGGER
-		TJSDebuggerAddClassVariable( GetSelfClassName().c_str(), name, TJS_TO_VM_REG_ADDR(dp) );
+		int regoffset = TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1);
+		// class name, func name, file name, code offset, var name, reg offset
+		TJSDebuggerAddLocalVariable( GetClassName().c_str(), GetName(), Block->GetName(), FunctionRegisterCodePoint, name, regoffset );
 #endif // ENABLE_DEBUGGER
-		PutCode(VM_SPDS, LEX_POS);
-		PutCode(TJS_TO_VM_REG_ADDR(-1), LEX_POS);
-		PutCode(TJS_TO_VM_REG_ADDR(dp), LEX_POS);
+		PutCode(VM_CP, LEX_POS);
+		PutCode(TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1), LEX_POS);
 		PutCode(TJS_TO_VM_REG_ADDR(init), LEX_POS);
 	}
+	else/* if(ff==-1) */
+	{
+		// first initialization
+		tjs_int n = Namespace.Find(name);
+#ifdef ENABLE_DEBUGGER
+		int regoffset = TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1);
+		// class name, func name, file name, code offset, var name, reg offset
+		TJSDebuggerAddLocalVariable( GetClassName().c_str(), GetName(), Block->GetName(), FunctionRegisterCodePoint, name, regoffset );
+#endif // ENABLE_DEBUGGER
+		PutCode(VM_CL, LEX_POS);
+		PutCode(TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1), LEX_POS);
+	}
+}
+//---------------------------------------------------------------------------
+void tTJSInterCodeContext::AssignThisVariable(const tjs_char *name, tjs_int init)
+{
+	// create member on this
+	tjs_int	dp = PutData(tTJSVariant(name));
+#ifdef ENABLE_DEBUGGER
+	TJSDebuggerAddClassVariable( GetSelfClassName().c_str(), name, TJS_TO_VM_REG_ADDR(dp) );
+#endif // ENABLE_DEBUGGER
+	PutCode(VM_SPDS, LEX_POS);
+	PutCode(TJS_TO_VM_REG_ADDR(-1), LEX_POS);
+	PutCode(TJS_TO_VM_REG_ADDR(dp), LEX_POS);
+	PutCode(TJS_TO_VM_REG_ADDR(init), LEX_POS);
 }
 //---------------------------------------------------------------------------
 void tTJSInterCodeContext::InitLocalVariable(const tjs_char *name, tTJSExprNode *node)
@@ -3336,17 +3445,21 @@ void tTJSInterCodeContext::EnterForInCode(tTJSVarDeclList *vars, tTJSExprNode *e
 		auto curr = MakeNP1(T_ITERCURRENT, d1);
 		tjs_int d2 = GenNodeCode(FrameBase, curr, TJS_RT_NEEDED, 0, tSubParam());
 		
-		// what we want:
-		//   $$$ (vars[0], vars[1], ..., vars[n]) = $2
-		// what we get:
-		//   $$$ vars[0] = $2;
-		//   $$$ vars[1](=...), vars[2](=...), ..., vars[n](=...);
-		auto first = vars->Get(0);
-		// need delete first.Value ???
-		first->Value = nullptr;
-		first->ResAddr = d2;
+		if (!vars) {
+			_yyerror(TJSCannotModifyLHS, Block);
+			delete[] t1;
+			return;
+		}
 		
-		DeclareVariables(vars);
+		if (vars->IsPacked()) {
+			DeclareVariablesInternal(vars->Unpack(), d2);
+			delete vars;
+		} else {
+			auto first = vars->Get(0);
+			first->Value = nullptr;
+			first->ResAddr = d2;
+			DeclareVariables(vars);
+		}
 		
 		ClearFrame(FrameBase, frame_start);
 	}
@@ -4246,80 +4359,63 @@ tTJSInterCodeContext::GetVarDeclNode(const tjs_char * varname, tTJSExprNode * va
 //---------------------------------------------------------------------------
 void tTJSInterCodeContext::DeclareVariables(tTJSVarDeclList *list)
 {
-	for (const auto &node : *list) {
-		switch (node.Type) {
-		case tTJSVarDeclList::NodeType::Var:   /* fall through */
-		case tTJSVarDeclList::NodeType::Const:
-			if (node.Value) {
-				InitLocalVariable(node.Name, node.Value);
-			} else {
-				AddLocalVariable(node.Name, node.ResAddr);
-			}
-			break;
-		case tTJSVarDeclList::NodeType::NotLocal:
-			if (node.Value) {
-				tTJSExprNode *name = MakeNP0(T_SYMBOL);
-				name->SetValue(tTJSVariant(node.Name));
-				CreateExprCode(MakeNP2(T_EQUAL, name, node.Value));
-			} else if (node.ResAddr) {
-				tjs_int n = Namespace.Find(node.Name);
-				if (n < 0) {
-					// on `this` context
-					tjs_int	dp = PutData(tTJSVariant(node.Name));
-					PutCode(VM_SPDS, LEX_POS);
-					PutCode(TJS_TO_VM_REG_ADDR(-1), LEX_POS);
-					PutCode(TJS_TO_VM_REG_ADDR(dp), LEX_POS);
-					PutCode(TJS_TO_VM_REG_ADDR(node.ResAddr), LEX_POS);
-				} else {
-					// on outer scope
-					PutCode(VM_CP, LEX_POS);
-					PutCode(TJS_TO_VM_REG_ADDR(-n-VariableReserveCount-1), LEX_POS);
-					PutCode(TJS_TO_VM_REG_ADDR(node.ResAddr), LEX_POS);
-				}
-			}
-		}
+	if (!list->IsPacked()) {
+		list->Each([&](tTJSVarDeclList::node_t node) { node->Commit(this, Namespace); });
+	} else {
+		// unpack assignment
+		tjs_int frame0 = FrameBase;
+		tjs_int resaddr = GenNodeCode(FrameBase, list->GetUnpackExpr(), TJS_RT_NEEDED, 0, tSubParam());
+		auto tuple = list->Unpack();
+		DeclareVariablesInternal(tuple, resaddr);
+		ClearFrame(FrameBase, frame0);
 	}
 	
 	delete list;
 }
 //---------------------------------------------------------------------------
-void tTJSInterCodeContext::CreateCompArray(tTJSListCompExpr *expr, tTJSExprNode *arraynode)
+void tTJSInterCodeContext::DeclareVariablesInternal(tTJSVarDeclList::DeclList *list, tjs_int resaddr)
 {
-	for (const auto &node : *expr) {
-		if (node.VarName) {
-			EnterForCode();
-			AddLocalVariable(node.VarName);
-			auto var = CreateVarDeclList(); 
-			var->Push(node.VarName);
-			EnterForInCode(var, node.Expr);
-		} /*else {
-			EnterIfCode();
-			CreateIfExprCode(node.Expr);
-			EnterBlock();
-		}*/
+	/*
+	commit xs ys := if
+	                atom? xs
+	                  xs <- ys
+	                else
+	                  commit (car xs) (car ys)
+	                  commit (cdr xs) (cdr ys)
+	*/
+	tjs_int frame = FrameBase;
+	
+	tjs_int index = 0;
+	// const %frame0, *indxdp
+	tjs_int indxdp = PutData(tTJSVariant(index));
+	PutCode(VM_CONST);
+	PutCode(TJS_TO_VM_REG_ADDR(frame+0));
+	PutCode(TJS_TO_VM_REG_ADDR(indxdp));
+	
+	while (list) {
+		// gpi %frame1, %resaddr . %frame0
+		PutCode(VM_GPI);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+1));
+		PutCode(TJS_TO_VM_REG_ADDR(resaddr));
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0));
+		// inc %frame0
+		PutCode(VM_INC);
+		PutCode(TJS_TO_VM_REG_ADDR(frame+0));
+		
+		if (list->Car->IsAtom()) {
+			// assign
+			tTJSVarDeclList::Node *node = (tTJSVarDeclList::Node*)list->Car;
+			node->ResAddr = frame+1;
+			node->Commit(this, Namespace);
+		} else {
+			// unpack
+			FrameBase += 2;
+			tTJSVarDeclList::DeclList *lst = (tTJSVarDeclList::DeclList*)list->Car;
+			DeclareVariablesInternal(lst, frame+1);
+		}
+		list = list->Cdr;
+		index += 1;
 	}
-	
-	// call "add(expr)" for arraynode
-	auto add = MakeNP0(T_CONSTVAL);
-	add->SetValue(tTJSVariant(TJS_W("add")));
-	auto caller = MakeNP2(T_DOT, arraynode, add);
-	auto arg = MakeNP1(T_ARG, expr->GetExpr());
-	CreateExprCode(MakeNP2(T_LPARENTHESIS, caller, arg));
-	
-	//arraynode->Add(MakeNP1(T_ARRAYARG, expr->GetExpr()));
-	// array.add(
-	
-	for (const auto &node : *expr) {
-		if (node.VarName) {
-			ExitForInCode();
-			ExitForCode();
-		} /*else {
-			ExitBlock();
-			ExitIfCode();
-		}*/
-	}
-	
-	delete expr;
 }
 //---------------------------------------------------------------------------
 tjs_char *
@@ -4341,11 +4437,10 @@ tTJSInterCodeContext::GetTemporaryVariableName(const tTJSVarDeclList *vars)
 				if (Namespace.Find(name) == -1) {
 					if (!vars) return name;
 					bool ok = true;
-					for (const auto &var : *vars) {
-						if (TJS_stricmp(var.Name, name)) continue;
-						ok = false;
-						break;
-					}
+					vars->Each([&](const tTJSVarDeclList::node_t node) {
+						if (TJS_stricmp(node->Name, name) == 0)
+							ok = false;
+					});
 					if (ok) return name;
 				}
 			}

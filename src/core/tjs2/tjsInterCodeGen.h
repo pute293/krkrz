@@ -21,6 +21,7 @@
 #include "tjsNamespace.h"
 #include "tjsError.h"
 #include "tjsObject.h"
+#include "tjsConsCell.h"
 
 #ifdef ENABLE_DEBUGGER
 #include "tjsDebug.h"
@@ -147,7 +148,7 @@ class tTJSVarDeclList
 public:
 	enum struct NodeType { Const, Var, NotLocal };
 	
-	struct Node
+	struct Node : public Sexp
 	{
 		const tjs_char *Name;
 		tTJSExprNode *Value;
@@ -161,76 +162,53 @@ public:
 		Node &operator=(const Node&) = delete;
 		Node(Node &&node) TJS_NOEXCEPT;
 		Node &operator=(Node &&node) TJS_NOEXCEPT;
+		void Commit(tTJSInterCodeContext *cc, tTJSLocalNamespace &ns) const TJS_NOEXCEPT;
 	};
 
-private:
-	typedef std::vector<Node> DeclList;
-	typedef DeclList::const_iterator iterator;
+	typedef Cell<Node> DeclList;
+	typedef DeclList::Atom node_t;
 
-	DeclList Nodes;
+private:
+	//typedef std::unique_ptr<DeclList> DeclList_t;
+	//DeclList_t Nodes = std::make_unique<DeclList>();
+	DeclList *Nodes = new DeclList();
+	tTJSExprNode *UnpackExpr = nullptr;
 
 public:
 	tTJSVarDeclList() = default;
 	tTJSVarDeclList(const tTJSVarDeclList&) = delete;
 	tTJSVarDeclList &operator=(const tTJSVarDeclList&) = delete;
-	size_t Count() { return Nodes.size(); }
-	Node *Get(size_t idx) { return &Nodes[idx]; }
-	Node *operator[](size_t idx) { return &Nodes[idx]; }
+	~tTJSVarDeclList() { delete Nodes; }
+	
+	size_t Count() const { return Nodes->size(); }
+	Node *Get(size_t idx) { return (*Nodes)[idx]; }
+	Node *operator[](size_t idx) { return (*Nodes)[idx]; }
+	
 	void Push(const tjs_char *varname, tTJSExprNode *node = nullptr);
 	void Push(Node *node);
-	void Pop() { Nodes.pop_back(); }
-	void SetType(NodeType type) { for (Node &node : Nodes) node.Type = type; }
+	//void Pop() { Nodes.pop_back(); }
+	
+	void SetType(NodeType type) { Nodes->each([=](node_t node){ node->Type = type; }); }
 	void SetConst() { SetType(NodeType::Const); }
 	void SetNotLocal() { SetType(NodeType::NotLocal); }
-	iterator begin() const { return Nodes.cbegin(); }
-	iterator end() const { return Nodes.cend(); }
-};
-//---------------------------------------------------------------------------
-// tTJSListCompExpr
-//---------------------------------------------------------------------------
-class tTJSListCompExpr
-{
-	tTJSExprNode *Expr;
-	struct Node {
-		const tjs_char *VarName;
-		tTJSExprNode *Expr;
-		Node(tTJSExprNode *expr, const tjs_char *varname = nullptr)
-			: Expr(expr)
-		{
-			if (varname) {
-				tjs_char *name = new tjs_char[TJS_strlen(varname) + 1];
-				TJS_strcpy(name, varname);
-				VarName = name;
-			} else { VarName = nullptr; }
+	
+	tTJSVarDeclList *Join(tTJSVarDeclList *list);
+	tTJSVarDeclList *Pack();
+	DeclList *Unpack();
+	void SetUnpackExpr(tTJSExprNode *expr) { UnpackExpr = expr; }
+	tTJSExprNode *GetUnpackExpr() const { return UnpackExpr; }
+	bool IsPacked() const {
+		auto c = Nodes;
+		while (c) {
+			if (!c->Car->IsAtom()) return true;
+			c = c->Cdr;
 		}
-		~Node() { delete[] VarName; }
-		Node(const Node&) = delete;
-		Node &operator=(const Node&) = delete;
-		Node(Node &&node) TJS_NOEXCEPT : VarName(node.VarName), Expr(node.Expr) {
-			if (this != &node) node.VarName = nullptr;
-		}
-		Node &operator=(Node &&node) TJS_NOEXCEPT {
-			if (this == &node) return *this;
-			VarName = node.VarName;
-			Expr = node.Expr;
-			node.VarName = nullptr;
-			return *this;
-		}
-	};
-	std::vector<Node> Nodes;
-	typedef std::vector<Node>::const_iterator iterator;
-public:
-	tTJSListCompExpr(tTJSExprNode *expr) { Expr = expr; }
-	~tTJSListCompExpr() { }
-	void Add(const tjs_char *varname, tTJSExprNode *iter) {
-		Nodes.emplace_back(iter, varname);
+		return false;
 	}
-	void AddPred(tTJSExprNode *pred) {
-		Nodes.emplace_back(pred, nullptr);
-	}
-	tTJSExprNode *GetExpr() { return Expr; }
-	iterator begin() const { return Nodes.cbegin(); }
-	iterator end() const { return Nodes.cend(); }
+	static tTJSVarDeclList *FromInlineArray(tTJSExprNode *array, tTJSVarDeclList *list = nullptr);
+	
+	void Each(std::function<void(node_t)> fn) { Nodes->each(fn); }
+	void Each(std::function<void(const node_t)> fn) const { Nodes->const_each(fn); }
 };
 //---------------------------------------------------------------------------
 // tTJSInterCodeContext - Intermediate Code Context
@@ -518,6 +496,8 @@ public:
 	ttstr GetPositionDescriptionString(tjs_int codepos) const;
 
 	void AddLocalVariable(const tjs_char *name, tjs_int init=0);
+	void AssignLocalVariable(const tjs_char *name, tjs_int init=0);
+	void AssignThisVariable(const tjs_char *name, tjs_int init);
 	void InitLocalVariable(const tjs_char *name, tTJSExprNode *node);
 	void InitLocalFunction(const tjs_char *name, tjs_int data);
 
@@ -591,10 +571,9 @@ public:
 	tTJSVarDeclList * CreateVarDeclList();
 	tTJSVarDeclList::Node * GetVarDeclNode(const tjs_char * varname, tTJSExprNode * val = nullptr);
 	void DeclareVariables(tTJSVarDeclList *list);
-
-	tTJSListCompExpr *InitCompList(tTJSExprNode *expr) { return new tTJSListCompExpr(expr); }
-	void CreateCompArray(tTJSListCompExpr *expr, tTJSExprNode *arraynode);
-
+private:
+	void DeclareVariablesInternal(tTJSVarDeclList::DeclList *list, tjs_int resaddr);
+public:
 	tjs_char *GetTemporaryVariableName(const tTJSVarDeclList *vars = nullptr);
 
 	//---------------------------------------------------------- disassembler

@@ -1,0 +1,86 @@
+Scripts.dump();
+(new TestUnpack()).run();
+
+class TestUnpack extends Test {
+  
+  var name = 'UNPACK';
+  var tests = [
+    'test_main',
+    'test_forin'
+  ];
+  
+  var x, y, z, w;
+  
+  function setup { x = y = z = w = void; }
+  function teardown { invalidate x; invalidate y; invalidate z; invalidate w; }
+  
+  function test_main {
+    var [a] = [1];
+    assert_equal(a, 1);
+    
+    var [[[a]]] = [[[10]]];
+    assert_equal(a, 10);
+    
+    var [a, b] = [2, 3];
+    assert_equal(a, 2);
+    assert_equal(b, 3);
+    
+    var [a, b] = [4, 5, 6];
+    assert_equal(a, 4);
+    assert_equal(b, 5);
+    
+    var [a, b, c] = [7, 8];
+    assert_equal(a, 7);
+    assert_equal(b, 8);
+    assert_equal(c, void);
+    
+    var [a, [b, c, [d]]] = [9, [10, 11, [12]]];
+    assert_equal(a, 9);
+    assert_equal(b, 10);
+    assert_equal(c, 11);
+    assert_equal(d, 12);
+    
+    var [[[a], b, c], d] = [[[13], 14, 15], 16];
+    assert_equal(a, 13);
+    assert_equal(b, 14);
+    assert_equal(c, 15);
+    assert_equal(d, 16);
+    
+    var [a, [b, c], d] = [17, [18, 19], 20];
+    assert_equal(a, 17);
+    assert_equal(b, 18);
+    assert_equal(c, 19);
+    assert_equal(d, 20);
+    
+    var [a, [b, [c]], d] = [21, [22, [23]], 24];
+    assert_equal(a, 21);
+    assert_equal(b, 22);
+    assert_equal(c, 23);
+    assert_equal(d, 24);
+    
+    var a, b, c, d;
+    {
+      [a, [b, c, [d]]] = [25, [26, 27, [28]]];
+    }
+    assert_equal(a, 25);
+    assert_equal(b, 26);
+    assert_equal(c, 27);
+    assert_equal(d, 28);
+    
+    [x, [y, z, [w]]] = [29, [30, 31, [32]]];
+    assert_equal(this.x, 29);
+    assert_equal(this.y, 30);
+    assert_equal(this.z, 31);
+    assert_equal(this.w, 32);
+  }
+  
+  function test_forin {
+    var k, v;
+    var d = %[];
+    for (var [k, v] in %[a: 1, b: 2, c: 3])
+      d[k] = v;
+    assert_equal(k, void, '1');
+    assert_equal(v, void, '2');
+    assert_equal_struct(d, %[a: 1, b: 2, c: 3]);
+  }
+}

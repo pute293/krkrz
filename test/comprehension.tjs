@@ -1,5 +1,4 @@
-Scripts.dump();
-
+//Scripts.dump();
 (new TestArrayComp()).run();
 
 /** Syntax

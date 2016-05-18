@@ -21,6 +21,9 @@
 - `Iterator` と `Iterator.Lazy`
   - ユーザ定義のオブジェクトを `for-in` で回せる
   - 継承して `current` と `moveNext` を適切にオーバーライドすれば上記の便利メソッドも自動で使えるようになる
+- アンパック代入（多重代入）
+  - `var [a, [b, [c]], d] = [1, [2, [3]], 4];` の形で代入できる
+  - for-in 文でも使用可能
 - Dictionary.METHOD incontextof OBJ の省略表現
   - `(Dictionary.assign incontextof dict0)(dict1)` を `dict0->assign(dict1)` と書ける
   - `(__class_of__(OBJ)).METHOD incontextof OBJ` にした方がいいかも？
@@ -87,7 +90,10 @@
     for (var pair in dict0) {
       // pair[0] is key
       // pair[1] is value
-      // actually I want this syntax: for (var key, value in dict) { ... }
+    }
+    for (var [k, v] in dict0) {
+      // k is key
+      // v is value
     }
     
     // 3. user-defined object iteration
@@ -117,7 +123,6 @@
 - 文字列配列の省略表記
 - `Iterator` への便利メソッドの追加
 - コンストラクタを省略したとき自動で親クラスのコンストラクタを呼び出すようにする
-- unpack 代入
 - `loop` 文でループ回数がとれるようにしたい
   - `loop (var i : 10) { ... }` みたいな
 - 例外の階層化、`catch` で例外のクラスごとに分岐

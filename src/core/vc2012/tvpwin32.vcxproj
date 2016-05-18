@@ -399,6 +399,7 @@
     <ClInclude Include="..\tjs2\tjsCommHead.h" />
     <ClInclude Include="..\tjs2\tjsCompileControl.h" />
     <ClInclude Include="..\tjs2\tjsConfig.h" />
+    <ClInclude Include="..\tjs2\tjsConsCell.h" />
     <ClInclude Include="..\tjs2\tjsConstArrayData.h" />
     <ClInclude Include="..\tjs2\tjsDate.h" />
     <ClInclude Include="..\tjs2\tjsdate.tab.hpp" />
@@ -562,6 +563,7 @@
     <ClCompile Include="..\tjs2\tjsByteCodeLoader.cpp" />
     <ClCompile Include="..\tjs2\tjsCompileControl.cpp" />
     <ClCompile Include="..\tjs2\tjsConfig.cpp" />
+    <ClCompile Include="..\tjs2\tjsConsCell.cpp" />
     <ClCompile Include="..\tjs2\tjsConstArrayData.cpp" />
     <ClCompile Include="..\tjs2\tjsDate.cpp" />
     <ClCompile Include="..\tjs2\tjsdate.tab.cpp" />
